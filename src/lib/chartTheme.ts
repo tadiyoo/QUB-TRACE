@@ -45,8 +45,14 @@ export const barChartOption = (data: { name: string; value: number }[]) => ({
   color: [TRACE_CHART_COLORS[0]],
   tooltip: {
     trigger: "axis",
-    formatter: (params: { data: number[] }[]) =>
-      `${params[0].name}: ${params[0].data[0]} kg CO₂e`,
+    formatter: (
+      params: Array<{ name?: string; data?: unknown[] | undefined }> | any[]
+    ) => {
+      const p = params?.[0];
+      const label = p?.name ?? "";
+      const raw = Array.isArray(p?.data) ? p.data[0] : undefined;
+      return `${label}: ${raw} kg CO₂e`;
+    },
   },
   grid: { left: "12%", right: "8%", top: "8%", bottom: "12%" },
   xAxis: {
