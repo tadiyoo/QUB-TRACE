@@ -1,4 +1,4 @@
-import type { TraceResult } from "./types";
+import type { EmissionCategory, TraceResult } from "./types";
 
 // Shape of the raw data stored in reports.dataJson
 export interface TraceInputs {
@@ -266,7 +266,9 @@ export function calculateTraceResult(
   }
 
   // Map all four input groups (Utilities, Travel, Waste, Procurement) into five display categories.
-  const categories = [
+  // We compute `percentage` later, so use a draft type first.
+  type EmissionCategoryDraft = Omit<EmissionCategory, "percentage">;
+  const categories: EmissionCategoryDraft[] = [
     {
       id: "travel_fieldwork",
       label: "Travel / fieldwork",
@@ -305,7 +307,7 @@ export function calculateTraceResult(
   ];
 
   const totalForPct = categories.reduce((sum, c) => sum + c.kgCo2e, 0) || 1;
-  const withPct = categories
+  const withPct: EmissionCategory[] = categories
     .map((c) => ({
       ...c,
       percentage: Math.round((c.kgCo2e / totalForPct) * 100),
