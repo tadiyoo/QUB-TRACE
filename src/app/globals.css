@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --trace-forest: #0d3b2c;
+  --trace-sage: #2d5a45;
+  --trace-mint: #6b9b7a;
+  --trace-teal: #0d9488;
+  --trace-cream: #f5f0e8;
+  --trace-sand: #e8dfd0;
+  --trace-stone: #4a5568;
+  --trace-amber: #d97706;
+}
+
+@layer base {
+  body {
+    @apply bg-trace-cream text-trace-forest antialiased;
+  }
+}
+
+/* Smooth scroll for in-page anchors */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Print-friendly: hide nav/export when printing */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
