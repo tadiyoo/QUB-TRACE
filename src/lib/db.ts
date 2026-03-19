@@ -5,7 +5,6 @@ import { randomUUID } from "crypto";
 const dbPath =
   process.env.DATABASE_PATH || path.join(process.cwd(), "trace-data.sqlite");
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let db: any = null;
 
 /**
