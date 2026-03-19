@@ -73,7 +73,15 @@ function fullReportHTML(result: TraceResult, interpretationMode: InterpretationI
     })
     .join("");
 
-  const methodologyCategories = [...new Set(EMISSION_FACTORS.map((r) => r.category))];
+  // Avoid spreading a Set for TS compatibility with older downlevel targets.
+  const methodologyCategories: string[] = [];
+  const seen: Record<string, true> = {};
+  EMISSION_FACTORS.forEach((r) => {
+    if (!seen[r.category]) {
+      seen[r.category] = true;
+      methodologyCategories.push(r.category);
+    }
+  });
   const methodologyEmissionTables = methodologyCategories
     .map((cat) => {
       const catRows = EMISSION_FACTORS.filter((r) => r.category === cat);
