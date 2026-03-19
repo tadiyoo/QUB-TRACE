@@ -3,6 +3,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { createReport, listReportsForUser, updateReport } from "@/lib/db";
 import { calculateTraceResult, type TraceInputs } from "@/lib/calc";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) {
