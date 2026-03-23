@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FilePlus2, LayoutDashboard, MessageCircle, Shield, Leaf } from "lucide-react";
+import { FilePlus2, LayoutDashboard, MessageCircle, Shield, Leaf, House } from "lucide-react";
 import Link from "next/link";
 import SidebarUserPanel from "./SidebarUserPanel";
 
@@ -65,6 +65,7 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
         <div>
           <SidebarUserPanel user={user} />
           <nav className="mt-4 space-y-2">
+            <NavItem href="/app" icon={<House className="w-4 h-4" />} label="Home" />
             <NavItem href="/app/new-report" icon={<FilePlus2 className="w-4 h-4" />} label="New report" />
             <NavItem href="/app/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Dashboard" />
             <NavItem href="/app/feedback" icon={<MessageCircle className="w-4 h-4" />} label="Give feedback" />

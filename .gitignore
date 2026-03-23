@@ -37,3 +37,10 @@ Thumbs.db
 
 # TypeScript
 next-env.d.ts
+
+# Accidental junk in repo root (e.g. mistyped shell commands)
+/cls
+/next
+/node
+/npm
+/trace-dashboard@*
