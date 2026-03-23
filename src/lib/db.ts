@@ -269,3 +269,37 @@ export function createFeedback(userId: string, type: string, subject: string, me
   stmt.run(id, userId, type, subject, message, createdAt);
   return { id, userId, type, subject, message, createdAt };
 }
+
+export function listAllUsers(): DbUser[] {
+  const stmt = getDb().prepare(
+    "SELECT * FROM users ORDER BY datetime(createdAt) DESC"
+  );
+  return stmt.all() as DbUser[];
+}
+
+export function listAllReports(): DbReport[] {
+  const stmt = getDb().prepare(
+    "SELECT * FROM reports ORDER BY datetime(updatedAt) DESC"
+  );
+  return stmt.all() as DbReport[];
+}
+
+export interface DbFeedbackWithUser extends DbFeedback {
+  email: string;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+}
+
+export function listAdminRequestsWithUser(): DbFeedbackWithUser[] {
+  const stmt = getDb().prepare(`
+    SELECT
+      f.id, f.userId, f.type, f.subject, f.message, f.createdAt,
+      u.email, u.username, u.firstName, u.lastName
+    FROM feedback f
+    JOIN users u ON u.id = f.userId
+    WHERE f.type = 'admin'
+    ORDER BY datetime(f.createdAt) DESC
+  `);
+  return stmt.all() as DbFeedbackWithUser[];
+}

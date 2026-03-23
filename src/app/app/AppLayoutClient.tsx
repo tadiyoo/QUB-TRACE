@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FilePlus2, LayoutDashboard, MessageCircle, Shield, Leaf, House } from "lucide-react";
+import { FilePlus2, LayoutDashboard, MessageCircle, Shield, Leaf, House, Users } from "lucide-react";
 import Link from "next/link";
 import SidebarUserPanel from "./SidebarUserPanel";
 
@@ -14,6 +14,7 @@ type User = {
   lastName: string | null;
   school: string | null;
   department: string | null;
+  isAdmin?: boolean;
 };
 
 export default function AppLayoutClient({ children }: { children: React.ReactNode }) {
@@ -70,6 +71,9 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
             <NavItem href="/app/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Dashboard" />
             <NavItem href="/app/feedback" icon={<MessageCircle className="w-4 h-4" />} label="Give feedback" />
             <NavItem href="/app/request-admin" icon={<Shield className="w-4 h-4" />} label="Request admin" />
+            {user.isAdmin && (
+              <NavItem href="/app/admin" icon={<Users className="w-4 h-4" />} label="Users" />
+            )}
           </nav>
         </div>
         <div className="px-2 text-[11px] text-trace-cream/85">

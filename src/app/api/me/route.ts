@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/admin";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -15,6 +16,7 @@ export async function GET() {
       lastName: user.lastName,
       school: user.school,
       department: user.department,
+      isAdmin: isAdminEmail(user.email),
     },
   });
 }
