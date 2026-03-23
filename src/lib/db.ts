@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { randomUUID } from "crypto";
 
 /** Use DATABASE_PATH for deployment (e.g. /data/trace-data.sqlite on Railway/Fly volume). */
@@ -14,7 +15,13 @@ let db: any = null;
 function getDb() {
   if (db) return db;
   const Database = require("better-sqlite3");
-  db = new Database(dbPath);
+  try {
+    fs.mkdirSync(path.dirname(dbPath), { recursive: true });
+    db = new Database(dbPath);
+  } catch (e) {
+    console.error("Failed to open SQLite database", { dbPath, error: e });
+    throw e;
+  }
   db.pragma("foreign_keys = ON");
 
   db.exec(`
