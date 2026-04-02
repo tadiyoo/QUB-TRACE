@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getReportById, updateReport, deleteReport } from "@/lib/db";
-import { calculateTraceResult, type TraceInputs } from "@/lib/calc";
+import { calculateTraceResult, mergeTraceDataForPatch, type TraceInputs } from "@/lib/calc";
 
 // Prevent Next.js from attempting any build-time/static work for this dynamic API route.
 export const dynamic = "force-dynamic";
@@ -36,7 +36,8 @@ export async function PATCH(request: Request, { params }: Params) {
       totalKgCo2e?: number | null;
       data?: unknown;
     };
-    const inputs = (data ?? JSON.parse(existing.dataJson)) as TraceInputs;
+    const existingInputs = JSON.parse(existing.dataJson) as TraceInputs;
+    const inputs = data != null ? mergeTraceDataForPatch(existingInputs, data as Partial<TraceInputs>) : existingInputs;
     const calc = calculateTraceResult(title ?? existing.title, inputs);
     const updated = updateReport(params.id, {
       title,

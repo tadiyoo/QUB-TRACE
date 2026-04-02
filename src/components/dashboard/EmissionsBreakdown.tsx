@@ -23,7 +23,6 @@ export default function EmissionsBreakdown({
 }: EmissionsBreakdownProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // Always show categories in descending order by emissions (largest first)
   const sortedCategories = [...result.categories].sort((a, b) => b.kgCo2e - a.kgCo2e);
 
   const donutData = sortedCategories.map((c) => ({
@@ -42,16 +41,18 @@ export default function EmissionsBreakdown({
       className={cn("max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-6", className)}
       aria-labelledby="breakdown-heading"
     >
-      <h2 id="breakdown-heading" className="text-xl font-semibold text-trace-forest mb-6">
+      <h2 id="breakdown-heading" className="text-xl font-semibold text-trace-forest mb-2">
         Emissions breakdown
       </h2>
+      <p className="text-sm text-trace-stone mb-6">
+        Categories, chart slices, and bars are sorted by emissions (largest first). Expand a category to
+        see each answered field and its illustrative kg CO₂e (fields also sorted by kg).
+      </p>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="rounded-2xl border border-trace-sand/60 bg-white p-6 shadow-card">
-          <p className="text-sm text-trace-stone mb-3">Share by category</p>
           <DonutChart data={donutData} height={300} />
         </div>
         <div className="rounded-2xl border border-trace-sand/60 bg-white p-6 shadow-card">
-          <p className="text-sm text-trace-stone mb-3">By category (in your chosen interpretation)</p>
           <EmissionsBarChart
             data={barData}
             height={300}
@@ -60,7 +61,6 @@ export default function EmissionsBreakdown({
         </div>
       </div>
       <div className="mt-6 rounded-2xl border border-trace-sand/60 bg-white overflow-hidden shadow-card">
-        <p className="text-sm text-trace-stone px-6 pt-5 pb-2">Expand category details</p>
         <ul className="divide-y divide-trace-sand/40">
           {sortedCategories.map((cat) => {
             const isExpanded = expandedId === cat.id;
@@ -92,16 +92,23 @@ export default function EmissionsBreakdown({
                       <div className="space-y-2">
                         <ul className="space-y-1.5">
                           {[...cat.breakdown]
-                            .sort((a, b) => b.kgCo2e - a.kgCo2e)
-                            .map((item) => {
+                            .sort(
+                              (a, b) =>
+                                b.kgCo2e - a.kgCo2e || a.label.localeCompare(b.label)
+                            )
+                            .map((item, idx) => {
                             const itemFormatted = interpret(item.kgCo2e, interpretationMode);
                             return (
                               <li
-                                key={item.label}
+                                key={`${cat.id}-${idx}-${item.label.slice(0, 80)}`}
                                 className="flex items-center justify-between gap-4 py-1 text-trace-forest"
                               >
-                                <span className="text-trace-stone">{item.label}</span>
-                                <span className="font-medium shrink-0">{itemFormatted.formatted}</span>
+                                <span className="text-trace-stone min-w-0 pr-2">{item.label}</span>
+                                <span className="font-medium shrink-0 tabular-nums">
+                                  {item.kgCo2e > 0
+                                    ? itemFormatted.formatted
+                                    : "—"}
+                                </span>
                               </li>
                             );
                           })}
@@ -112,15 +119,10 @@ export default function EmissionsBreakdown({
                             {formatted.formatted}
                           </span>
                         </div>
-                        <p className="text-xs text-trace-stone mt-1">
-                          {formatPercentage(cat.percentage)} of total footprint
-                        </p>
                       </div>
                     ) : (
                       <div className="flex items-start justify-between gap-4">
-                        <p className="flex-1 text-trace-stone">
-                          {cat.description ?? `Emissions from ${cat.label.toLowerCase()}.`}
-                        </p>
+                        <div className="flex-1" />
                         <div className="text-right shrink-0">
                           <p className="font-semibold text-trace-forest">
                             {formatted.formatted}

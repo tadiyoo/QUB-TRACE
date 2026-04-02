@@ -7,12 +7,22 @@ export type ConfidenceLevel = "low" | "medium" | "high";
 
 export type EaseLevel = "low" | "medium" | "high";
 
+/** Matches create-report wizard tabs (Profile → Space → Travel → Digital → Research) */
 export type EmissionCategoryId =
-  | "travel_fieldwork"
-  | "lab_equipment"
-  | "computing_cloud"
-  | "consumables"
-  | "printing_admin";
+  | "wizard_profile"
+  | "wizard_space"
+  | "wizard_travel"
+  | "wizard_digital"
+  | "wizard_research";
+
+/** Fixed UI order for breakdown lists and charts (not sorted by kg) */
+export const WIZARD_STEP_ORDER: readonly EmissionCategoryId[] = [
+  "wizard_profile",
+  "wizard_space",
+  "wizard_travel",
+  "wizard_digital",
+  "wizard_research",
+] as const;
 
 export interface CategoryBreakdownItem {
   label: string;
@@ -26,7 +36,7 @@ export interface EmissionCategory {
   kgCo2e: number;
   percentage: number;
   description?: string;
-  /** Per-input breakdown for expand details (e.g. "Pages printed", "Admin hours") and their CO₂ */
+  /** Per field line items (same labels as the TRACE calculator form) */
   breakdown?: CategoryBreakdownItem[];
 }
 

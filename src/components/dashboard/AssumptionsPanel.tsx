@@ -19,10 +19,6 @@ export default function AssumptionsPanel({ result, className }: AssumptionsPanel
       <h2 id="assumptions-heading" className="text-xl font-semibold text-trace-forest mb-3">
         Assumptions & transparency
       </h2>
-      <p className="text-base text-trace-stone mb-5">
-        TRACE does not pretend the number is perfectly exact. Below are the main assumptions and
-        data quality notes.
-      </p>
       <div className="rounded-2xl border border-trace-sand/60 bg-white p-6 shadow-card">
         <blockquote className="text-base text-trace-stone border-l-4 border-trace-mint pl-5 py-2 mb-5">
           {result.uncertaintyNote}

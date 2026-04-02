@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import TeamBResponsesSection from "@/components/dashboard/TeamBResponsesSection";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-[#f5f0e8] text-[#0d3b2c] antialiased" style={{ fontFamily: "system-ui, sans-serif" }}>
+        <TeamBResponsesSection />
         {children}
       </body>
     </html>

@@ -38,10 +38,16 @@ export default function ReductionOpportunities({
         Reduction opportunities
       </h2>
       <p className="text-base text-trace-stone mb-5">
-        Before offsetting, review the top reduction options. Most of your footprint comes from
-        activities that may still be adjustable.
+        Before offsetting, review options aligned with your TRACE calculator inputs (travel,
+        space & research, digital, site use, materials).
       </p>
       <div className="space-y-4">
+        {sorted.length === 0 && (
+          <p className="text-sm text-trace-stone rounded-2xl border border-trace-sand/60 bg-white p-5">
+            Complete more TRACE calculator fields so the model can suggest reductions tied to your
+            travel, space, digital, and materials answers.
+          </p>
+        )}
         {sorted.map((opp) => {
           const savingF = interpret(opp.potentialSavingKgCo2e, interpretationMode);
           return (

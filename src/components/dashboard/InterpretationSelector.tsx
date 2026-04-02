@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Info } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { InterpretationId } from "@/lib/interpretations";
 import { INTERPRETATION_MODES, getMode } from "@/lib/interpretations";
 import { cn } from "@/lib/utils";
@@ -35,12 +35,6 @@ export default function InterpretationSelector({
     <div ref={ref} className={cn("relative", className)}>
       <label className="flex items-center gap-1.5 text-xs font-medium text-trace-stone mb-1.5">
         Show emissions as
-        <span
-          className="inline-flex text-trace-stone/80 hover:text-trace-forest cursor-help"
-          title="Choose how to view emissions (e.g. kg CO₂e, kWh, £, car km, flights) so you can relate results to your field."
-        >
-          <Info className="w-3.5 h-3.5" aria-hidden />
-        </span>
       </label>
       <button
         type="button"

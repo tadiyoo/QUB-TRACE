@@ -7,9 +7,9 @@ import type { TraceResult } from "../../types";
 import type { InterpretationId } from "../../interpretations";
 import { interpret, getMode, INTERPRETATION_METHODOLOGY } from "../../interpretations";
 import {
-  EMISSION_FACTORS,
   METHODOLOGY_INTRO,
   METHODOLOGY_SOURCES,
+  TRACE_B_RULES_SUMMARY,
 } from "../../methodology";
 import {
   formatPercentage,
@@ -73,38 +73,22 @@ function fullReportHTML(result: TraceResult, interpretationMode: InterpretationI
     })
     .join("");
 
-  // Avoid spreading a Set for TS compatibility with older downlevel targets.
-  const methodologyCategories: string[] = [];
-  const seen: Record<string, true> = {};
-  EMISSION_FACTORS.forEach((r) => {
-    if (!seen[r.category]) {
-      seen[r.category] = true;
-      methodologyCategories.push(r.category);
-    }
-  });
-  const methodologyEmissionTables = methodologyCategories
-    .map((cat) => {
-      const catRows = EMISSION_FACTORS.filter((r) => r.category === cat);
-      const body = catRows
-        .map(
-          (r) =>
-            `<tr><td>${escapeHtml(r.input)}</td><td>${escapeHtml(r.unit)}</td><td>${escapeHtml(r.factor)}</td><td>${escapeHtml(r.note ?? "—")}</td></tr>`
-        )
-        .join("");
-      return `<h3 style="font-size:0.95rem;margin-top:12px;margin-bottom:4px;">${escapeHtml(cat)}</h3>
-<table class="methodology-table"><thead><tr><th>Input</th><th>Unit</th><th>Factor</th><th>Note</th></tr></thead><tbody>${body}</tbody></table>`;
-    })
-    .join("");
+  const methodologyRulesList = TRACE_B_RULES_SUMMARY.map(
+    (t) => `<li>${escapeHtml(t)}</li>`
+  ).join("");
   const methodologyInterpretationRows = INTERPRETATION_METHODOLOGY.map(
     (m) =>
       `<tr><td>${escapeHtml(m.shortLabel)}</td><td>${escapeHtml(m.formula)}</td><td>${escapeHtml(m.source)}</td></tr>`
   ).join("");
+  const introBlock =
+    METHODOLOGY_INTRO.trim() !== ""
+      ? `<p>${escapeHtml(METHODOLOGY_INTRO)}</p>`
+      : "";
   const methodologySectionHtml = `
 <h2>How we obtained these results</h2>
-<p>${escapeHtml(METHODOLOGY_INTRO)}</p>
-<h3 style="font-size:1rem;margin-top:16px;">Emission factors (kg CO₂e per unit of input)</h3>
-<p class="meta">Each input is multiplied by the factor below to get kg CO₂e.</p>
-${methodologyEmissionTables}
+${introBlock}
+<h3 style="font-size:1rem;margin-top:16px;">TRACE B placeholder rules (carbon calculator)</h3>
+<ul style="margin:8px 0;padding-left:20px;font-size:0.9rem;">${methodologyRulesList}</ul>
 <h3 style="font-size:1rem;margin-top:16px;">Interpretation units</h3>
 <p class="meta">Conversions from kg CO₂e:</p>
 <table class="methodology-table">

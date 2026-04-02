@@ -1,7 +1,9 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import PageHero from "@/components/layout/PageHero";
 
 type ReportRow = {
   totalKgCo2e: number | null;
@@ -132,13 +134,42 @@ export default function AppHomePage() {
 
   return (
     <section className="w-full max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-6">
+      <PageHero
+        compactIntro
+        kicker="TRACE · Home"
+        title="User guide & getting started"
+        icon={<BookOpen className="w-3 h-3" />}
+        description={
+          <>
+            <p className="mb-2 text-balance">
+              How to move through each step, interpret bands and units, use procurement codes, and see example lab consumable and equipment lists. The guide also explains HPC options and what the footprint summary is intended to show.
+            </p>
+            <ul className="text-xs sm:text-sm text-trace-cream/80 space-y-1 list-disc pl-5">
+              <li>Complete each step that applies; optional lab, field, animal, and materials blocks stay in one place per topic.</li>
+              <li>Prefer estimates where you do not have exact numbers—consistency matters more than false precision.</li>
+            </ul>
+          </>
+        }
+        actionsClassName="[&>*]:inline-flex [&>*]:w-full lg:[&>*]:w-[13.75rem] [&>*]:justify-center"
+        actions={
+          <Link
+            href="/app/documentation"
+            className="items-center gap-2 rounded-xl bg-trace-cream text-trace-forest px-5 py-3 text-sm font-semibold shadow-md hover:bg-white transition-colors border border-white/40"
+          >
+            Read the guide
+          </Link>
+        }
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 auto-rows-fr">
         <article className="rounded-3xl border border-trace-sand/60 bg-gradient-to-br from-white via-trace-cream/35 to-white p-6 shadow-card relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-trace-forest via-trace-mint to-trace-teal" />
           <h2 className="text-2xl font-semibold text-trace-forest mb-2">What is TRACE?</h2>
           <p className="text-sm text-trace-stone mb-4">
-            The Tool for Research Accounting of Carbon and Emissions is a research ready carbon calculator that can quantify emissions of a project and provide
-            advice on methods of reducing the possible impact.
+            The <span className="font-bold">T</span>ool for <span className="font-bold">R</span>esearch{" "}
+            <span className="font-bold">A</span>ccounting of <span className="font-bold">C</span>arbon and{" "}
+            <span className="font-bold">E</span>missions is a research ready carbon calculator that can quantify emissions of a project and provide advice on
+            methods of reducing the possible impact.
           </p>
           <h3 className="text-lg font-semibold text-trace-forest mb-2">What is the goal?</h3>
           <p className="text-sm text-trace-stone mb-4">
@@ -155,14 +186,17 @@ export default function AppHomePage() {
           </p>
           <h3 className="text-lg font-semibold text-trace-forest mb-2">How to use TRACE?</h3>
           <ol className="list-decimal pl-5 text-sm text-trace-stone space-y-1.5">
-            <li>Navigate to the dashboard to name and create a new project.</li>
-            <li>You will be asked to complete a set of questions so we can assess the projected emissions of the project.</li>
-            <li>TRACE will then calculate and give a summary of your results and provide advice on possible reduction methods.</li>
-            <li>
-              You can also export your results in your needed format for future reference (your project will also be saved to your dashboard where you can
-              review and edit it)
-            </li>
+            <li>Use <span className="font-medium text-trace-forest">New report</span> to name your project and work through Profile, Space, Travel, Digital, and Research.</li>
+            <li>Answer the questions so TRACE can estimate emissions; bands and units are explained in the user guide.</li>
+            <li>Review your summary on the Results step and explore reduction ideas; export PDF, CSV, or JSON if you need a record.</li>
+            <li>Drafts stay on your dashboard so you can revisit or edit later.</li>
           </ol>
+          <p className="mt-4 text-sm text-trace-stone">
+            <Link href="/app/documentation" className="font-medium text-trace-teal hover:text-trace-forest underline underline-offset-2">
+              Open the full user guide
+            </Link>{" "}
+            for methodology notes, procurement codes, and lab example lists.
+          </p>
         </article>
 
         <article className="rounded-3xl border border-trace-sand/60 bg-gradient-to-br from-white via-trace-mint/25 to-trace-cream/40 text-trace-forest p-6 shadow-card relative overflow-hidden">

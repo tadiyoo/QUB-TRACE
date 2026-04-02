@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FilePlus2, LayoutDashboard, MessageCircle, Shield, Leaf, House, Users } from "lucide-react";
+import { FilePlus2, LayoutDashboard, MessageCircle, Shield, Leaf, House, Users, BookOpen } from "lucide-react";
 import Link from "next/link";
 import SidebarUserPanel from "./SidebarUserPanel";
 
@@ -62,8 +62,8 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
 
   return (
     <div className="h-screen flex bg-gradient-to-br from-trace-cream via-white to-trace-mint/30 overflow-hidden">
-      <aside className="w-72 bg-gradient-to-b from-trace-forest via-trace-mint to-trace-forest text-trace-cream border-r border-trace-sand/60 flex flex-col justify-between py-5 px-4 backdrop-blur-sm flex-shrink-0">
-        <div>
+      <aside className="w-72 bg-gradient-to-b from-trace-forest via-trace-mint to-trace-forest text-trace-cream border-r border-trace-sand/60 flex flex-col py-5 px-4 backdrop-blur-sm flex-shrink-0 min-h-0">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <SidebarUserPanel user={user} />
           <nav className="mt-4 space-y-2">
             <NavItem href="/app" icon={<House className="w-4 h-4" />} label="Home" />
@@ -74,9 +74,10 @@ export default function AppLayoutClient({ children }: { children: React.ReactNod
             {user.isAdmin && (
               <NavItem href="/app/admin" icon={<Users className="w-4 h-4" />} label="Users" />
             )}
+            <NavItem href="/app/documentation" icon={<BookOpen className="w-4 h-4" />} label="User guide" />
           </nav>
         </div>
-        <div className="px-2 text-[11px] text-trace-cream/85">
+        <div className="mt-4 px-2 text-[11px] text-trace-cream/85 shrink-0">
           <img
             src="/qub-logo.png"
             alt="Queen's University Belfast logo"

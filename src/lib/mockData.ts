@@ -1,5 +1,5 @@
 /**
- * TRACE Dashboard — Sample result data (as would come from Team C)
+ * TRACE Dashboard — Sample result data for local development
  */
 
 import type { TraceResult } from "./types";
@@ -12,25 +12,55 @@ export const mockTraceResult: TraceResult = {
   reductionPotentialKgCo2e: 48,
   confidence: "medium",
   largestCategory: {
-    id: "travel_fieldwork",
-    label: "Travel / fieldwork",
+    id: "wizard_travel",
+    label: "Travel — commute, field days & conferences (T1–T3)",
     shortLabel: "Travel",
     kgCo2e: 103,
     percentage: 53,
-    description: "Flights, rail, and fieldwork travel",
+    description: "TRACE B Step 3",
   },
   categories: [
-    { id: "travel_fieldwork", label: "Travel / fieldwork", shortLabel: "Travel", kgCo2e: 103, percentage: 53 },
-    { id: "computing_cloud", label: "Computing / cloud / storage", shortLabel: "Computing", kgCo2e: 34, percentage: 18 },
-    { id: "lab_equipment", label: "Lab work / equipment use", shortLabel: "Lab", kgCo2e: 28, percentage: 15 },
-    { id: "consumables", label: "Consumables / materials", shortLabel: "Consumables", kgCo2e: 18, percentage: 9 },
-    { id: "printing_admin", label: "Printing / admin / miscellaneous", shortLabel: "Printing & admin", kgCo2e: 10, percentage: 5 },
+    {
+      id: "wizard_profile",
+      label: "Profile — demographics, funding & outputs (D1, F1, L1)",
+      shortLabel: "Profile",
+      kgCo2e: 12,
+      percentage: 6,
+    },
+    {
+      id: "wizard_space",
+      label: "Space — campus & space use (S*)",
+      shortLabel: "Space",
+      kgCo2e: 18,
+      percentage: 9,
+    },
+    {
+      id: "wizard_travel",
+      label: "Travel — commute, field days & conferences (T1–T3)",
+      shortLabel: "Travel",
+      kgCo2e: 103,
+      percentage: 53,
+    },
+    {
+      id: "wizard_digital",
+      label: "Digital — computing, cloud, AI & HPC (C1–C8)",
+      shortLabel: "Digital",
+      kgCo2e: 34,
+      percentage: 18,
+    },
+    {
+      id: "wizard_research",
+      label: "Research — context, lab, field, animal, other resources & notes",
+      shortLabel: "Research",
+      kgCo2e: 26,
+      percentage: 14,
+    },
   ],
   reductionOpportunities: [
     {
       id: "r1",
-      categoryId: "travel_fieldwork",
-      title: "Optimise travel and conferencing",
+      categoryId: "wizard_travel",
+      title: "Travel & mobility (Step 3)",
       currentEmissions: 103,
       suggestedAction: "Consolidate trips, favour rail over short-haul flights, use virtual meetings where possible.",
       potentialSavingKgCo2e: 38,
@@ -39,8 +69,8 @@ export const mockTraceResult: TraceResult = {
     },
     {
       id: "r2",
-      categoryId: "computing_cloud",
-      title: "Cloud computing",
+      categoryId: "wizard_digital",
+      title: "Computing & digital (Step 4)",
       currentEmissions: 34,
       suggestedAction: "Reduce idle compute and storage time",
       potentialSavingKgCo2e: 12,
@@ -49,33 +79,24 @@ export const mockTraceResult: TraceResult = {
     },
     {
       id: "r3",
-      categoryId: "printing_admin",
-      title: "Printing",
-      currentEmissions: 10,
-      suggestedAction: "Digital-first submission and review",
+      categoryId: "wizard_space",
+      title: "Campus & space use (Step 2)",
+      currentEmissions: 18,
+      suggestedAction: "Digital-first workflows and shared space use",
       potentialSavingKgCo2e: 4,
       ease: "low",
       priority: 3,
     },
-    {
-      id: "r4",
-      categoryId: "travel_fieldwork",
-      title: "Fieldwork travel",
-      currentEmissions: 103,
-      suggestedAction: "Combine trips and prefer train where possible",
-      potentialSavingKgCo2e: 14,
-      ease: "high",
-      priority: 4,
-    },
   ],
   assumptions: [
-    { id: "a1", label: "Emission factors", value: "UK DEFRA 2024, IEA for electricity", source: "DEFRA, IEA" },
-    { id: "a2", label: "Flight distances", value: "Great circle with radiative forcing multiplier 1.9", source: "DEFRA" },
-    { id: "a3", label: "Lab energy", value: "Allocated share of building consumption", source: "Estimate" },
-    { id: "a4", label: "Cloud usage", value: "Based on reported compute hours and region", source: "Provider docs" },
+    {
+      id: "a1",
+      label: "TRACE B calculator model",
+      value: "Illustrative kg CO₂e per answered field until final TRACE factors ship.",
+    },
   ],
   estimatedInputsCount: 2,
   optionalInputsCount: 1,
   uncertaintyNote:
-    "This footprint is an estimate based on user-entered activity data and standard emission factors. Results are more reliable for travel and procurement categories than for shared infrastructure and indirect energy allocation.",
+    "Illustrative TRACE B model: totals scale with completed calculator fields using placeholder factors.",
 };

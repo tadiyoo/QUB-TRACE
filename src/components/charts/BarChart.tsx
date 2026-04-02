@@ -2,6 +2,7 @@
 
 import type { InterpretationId } from "@/lib/interpretations";
 import { interpret } from "@/lib/interpretations";
+import { emissionMagnitudeColors } from "@/lib/chartTheme";
 
 interface BarChartProps {
   data: { name: string; value: number }[];
@@ -15,6 +16,7 @@ export default function EmissionsBarChart({
   interpretationMode = "kg_co2e",
 }: BarChartProps) {
   const max = Math.max(...data.map((d) => d.value), 1);
+  const colors = emissionMagnitudeColors(data.map((d) => d.value));
 
   return (
     <div style={{ height: `${height}px`, width: "100%" }} className="text-trace-forest">
@@ -27,15 +29,28 @@ export default function EmissionsBarChart({
           justifyContent: "space-between",
         }}
       >
-        {data.map((d) => {
+        {data.map((d, i) => {
           const formatted = interpret(d.value, interpretationMode);
+          const barColor = colors[i] ?? "#64748b";
           return (
             <div
               key={d.name}
               style={{ display: "flex", alignItems: "center", gap: 10 }}
               className="text-sm"
             >
-              <span style={{ width: 80, flexShrink: 0 }}>{d.name}</span>
+              <span style={{ width: 80, flexShrink: 0, display: "flex", alignItems: "center", gap: 6 }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: barColor,
+                    flexShrink: 0,
+                    boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
+                  }}
+                />
+                {d.name}
+              </span>
               <div
                 style={{
                   flex: 1,
@@ -49,7 +64,7 @@ export default function EmissionsBarChart({
                   style={{
                     width: `${(d.value / max) * 100}%`,
                     height: "100%",
-                    background: "#2d5a45",
+                    background: barColor,
                     borderRadius: 6,
                   }}
                 />

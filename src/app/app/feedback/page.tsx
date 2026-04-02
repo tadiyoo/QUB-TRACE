@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MessageCircle, Loader2 } from "lucide-react";
+import PageHero from "@/components/layout/PageHero";
 
 export default function FeedbackPage() {
   const [subject, setSubject] = useState("");
@@ -38,18 +39,12 @@ export default function FeedbackPage() {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto px-3 sm:px-4 lg:px-6 py-6">
-      <div className="mb-6 w-full rounded-3xl bg-gradient-to-r from-trace-forest via-trace-mint to-trace-teal text-trace-cream p-5 sm:p-6 shadow-card relative overflow-hidden">
-        <div className="absolute -right-8 -top-8 w-28 h-28 rounded-full border border-white/10" />
-        <div className="flex items-start justify-between gap-6 relative z-10 w-full">
-          <div className="flex-1 min-w-0 space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-semibold">Give TRACE feedback</h1>
-            <p className="text-xs sm:text-sm text-trace-cream/90">
-              Tell us what works, what&apos;s confusing, or what you&apos;d love TRACE to do next. Your
-              input helps shape a better low‑carbon research tool for everyone.
-            </p>
-          </div>
-        </div>
-      </div>
+      <PageHero
+        kicker="TRACE · Feedback"
+        title="Give TRACE feedback"
+        icon={<MessageCircle className="w-3 h-3" />}
+        description="Tell us what works, what's confusing, or what you'd love TRACE to do next. Your input helps shape a better low‑carbon research tool for everyone."
+      />
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-2xl border border-trace-sand/60 shadow-card p-5 space-y-4"

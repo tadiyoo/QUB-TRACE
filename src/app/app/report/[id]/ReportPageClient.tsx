@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Leaf } from "lucide-react";
 import type { TraceResult } from "@/lib/types";
-import { getCategoryBreakdowns, type TraceInputs } from "@/lib/calc";
+import { calculateTraceResult, type TraceInputs } from "@/lib/calc";
 import ReportClient from "./ReportClient";
 
 interface ReportFromApi {
@@ -29,8 +29,8 @@ function defaultResult(report: ReportFromApi): TraceResult {
     reductionPotentialKgCo2e: 0,
     confidence: "medium",
     largestCategory: {
-      id: "travel_fieldwork",
-      label: "Travel / fieldwork",
+      id: "wizard_travel",
+      label: "Travel — commute, field days & conferences (T1–T3)",
       shortLabel: "Travel",
       kgCo2e: report.totalKgCo2e ?? 0,
       percentage: 100,
@@ -41,7 +41,7 @@ function defaultResult(report: ReportFromApi): TraceResult {
     estimatedInputsCount: 0,
     optionalInputsCount: 0,
     uncertaintyNote:
-      "This report was created before the calculation engine was wired to the database. Results are limited.",
+      "No saved TRACE calculator data could be loaded for this report. Open the report editor and save again.",
   };
 }
 
@@ -95,9 +95,6 @@ export default function ReportPageClient() {
     );
   }
 
-  let traceResult: TraceResult =
-    (report.resultJson && (JSON.parse(report.resultJson) as TraceResult)) || defaultResult(report);
-
   let reportInputs: TraceInputs | undefined;
   try {
     reportInputs = JSON.parse(report.dataJson || "{}") as TraceInputs;
@@ -105,21 +102,19 @@ export default function ReportPageClient() {
     reportInputs = undefined;
   }
 
-  // Enrich categories with per-input breakdown from dataJson when missing (e.g. report saved before breakdown was added)
+  // Totals, percentages, and breakdown must all come from saved inputs (dataJson).
+  // Stale resultJson alone showed e.g. travel-only kg while calculator inputs lived in dataJson.
+  let traceResult: TraceResult;
   if (reportInputs) {
-    const breakdowns = getCategoryBreakdowns(reportInputs);
-    const hasMissingBreakdown = traceResult.categories.some(
-      (c) => !c.breakdown || c.breakdown.length === 0
+    traceResult = calculateTraceResult(
+      report.title || "Untitled report",
+      reportInputs,
+      new Date(report.updatedAt)
     );
-    if (hasMissingBreakdown) {
-      traceResult = {
-        ...traceResult,
-        categories: traceResult.categories.map((cat) => ({
-          ...cat,
-          breakdown: cat.breakdown?.length ? cat.breakdown : breakdowns[cat.id] ?? [],
-        })),
-      };
-    }
+  } else {
+    traceResult =
+      (report.resultJson && (JSON.parse(report.resultJson) as TraceResult)) ||
+      defaultResult(report);
   }
 
   return (
@@ -138,9 +133,7 @@ export default function ReportPageClient() {
               Report overview
             </h1>
             <p className="text-xs sm:text-sm text-trace-cream/90 w-full">
-              Review this project&apos;s footprint, export to PDF or data, and use the controls below
-              to switch units (kg CO₂e, kWh, £, etc.). Report title and date appear in the section
-              below and are included in exports.
+              Exports and unit conversion are in the toolbar below.
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 print:hidden shrink-0">
