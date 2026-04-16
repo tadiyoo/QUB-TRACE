@@ -267,15 +267,100 @@ export function teamBFootprintAdditions(teamB: TeamBInputs): WizardFootprintAdd 
     pushPerField(a, "wizard_space", teamB.spaceUse, spaceN * perField);
   }
 
-  const travelN = filledCount(teamB.travelCommute);
-  if (travelN > 0) {
-    pushPerField(
-      a,
-      "wizard_travel",
-      teamB.travelCommute,
-      travelN * P.travelCommuteKgPerAnsweredField
-    );
+// ── EMISSION FACTOR TABLES ──────────────────────────────────────────────
+
+  const TRANSPORT_EF: Record<string, number> = {
+    "Car (petrol/diesel)": 0.1645,
+    "Electric/Hybrid Car": 0.1261,
+    "Carpool":             0.0823,
+    "Bus":                 0.1184,
+    "Train":               0.0355,
+    "Bike":                0.0,
+    "Walk":                0.0,
+    "Flight":              0.0,
+    "NA":                  0.0,
+  };
+
+// One-way distance bands → midpoint km
+  const ONE_WAY_MID: Record<string, number> = {
+    "<10": 5, "<20": 15, "<30": 25, "<40": 35, "<50": 45, "50+": 60,
+  };
+
+// Round-trip conference distance bands → midpoint km
+  const CONF_RT_MID: Record<string, number> = {
+    "<100": 50, "100-500": 300, "500-1000": 750, "1000-3000": 2000, "3000+": 5000,
+  };
+
+// ── HELPER ───────────────────────────────────────────────────────────────
+
+  function flightEF(rtKm: number): number {
+    if (rtKm < 500)  return 0.2459;   // domestic
+    if (rtKm < 3700) return 0.1510;   // short-haul
+    return 0.1479;                     // long-haul
   }
+
+// ── COMMUTE (T1) ─────────────────────────────────────────────────────────
+
+  const tc = teamB.travelCommute;
+  const tripsPerWeek = teamB.demographics?.d1e_mode === "Part-time" ? 3 : 5;
+  const workingWeeks = 46;
+
+  const dist1 = ONE_WAY_MID[tc.t1c_km]  ?? 0;
+  const ef1   = TRANSPORT_EF[tc.t1a_primary] ?? 0;
+  const kgCommutePrimary = dist1 * 2 * tripsPerWeek * workingWeeks * ef1;
+
+  const dist1b = ONE_WAY_MID[tc.t1f_km] ?? 0;
+  const ef1b   = TRANSPORT_EF[tc.t1d_sec] ?? 0;
+  const kgCommuteSecondary = (tc.t1d_sec && tc.t1d_sec !== "NA")
+      ? dist1b * 2 * tripsPerWeek * workingWeeks * ef1b
+      : 0;
+
+  if (kgCommutePrimary > 0)
+    push(a, "wizard_travel", "Commute — primary mode", kgCommutePrimary);
+  if (kgCommuteSecondary > 0)
+    push(a, "wizard_travel", "Commute — secondary mode", kgCommuteSecondary);
+
+// ── FIELDWORK TRAVEL (T2) ────────────────────────────────────────────────
+
+  const fwDays = nn(tc.t2a_days);
+  const dist2  = ONE_WAY_MID[tc.t2d_km] ?? 0;
+  const ef2    = TRANSPORT_EF[tc.t2b_mode] ?? 0;
+  const kgFieldPrimary = dist2 * 2 * fwDays * ef2;
+
+  const dist2b = ONE_WAY_MID[tc.t2g_km] ?? 0;
+  const ef2b   = TRANSPORT_EF[tc.t2e_sec] ?? 0;
+  const kgFieldSecondary = (tc.t2e_sec && tc.t2e_sec !== "NA")
+      ? dist2b * 2 * fwDays * ef2b
+      : 0;
+
+  if (kgFieldPrimary > 0)
+    push(a, "wizard_travel", "Fieldwork travel — primary", kgFieldPrimary);
+  if (kgFieldSecondary > 0)
+    push(a, "wizard_travel", "Fieldwork travel — secondary", kgFieldSecondary);
+
+// ── CONFERENCE TRAVEL (T3) ───────────────────────────────────────────────
+
+  const confs   = nn(tc.t3a_conf);
+  const confRT  = CONF_RT_MID[tc.t3d_rt] ?? 0;
+  let ef3: number;
+
+  if (tc.t3b_mode === "Flight") {
+    ef3 = flightEF(confRT);
+  } else {
+    ef3 = TRANSPORT_EF[tc.t3b_mode] ?? 0;
+  }
+  const kgConfPrimary = confs * confRT * ef3;
+
+  const dist3b = ONE_WAY_MID[tc.t3g_km] ?? 0;
+  const ef3b   = TRANSPORT_EF[tc.t3e_sec] ?? 0;
+  const kgConfSecondary = (tc.t3e_sec && tc.t3e_sec !== "NA")
+      ? confs * dist3b * 2 * ef3b
+      : 0;
+
+  if (kgConfPrimary > 0)
+    push(a, "wizard_travel", "Conference travel — primary", kgConfPrimary);
+  if (kgConfSecondary > 0)
+    push(a, "wizard_travel", "Conference travel — secondary", kgConfSecondary);
 
   const compN = filledCount(teamB.computing);
   if (flags.includeHpcMonthlyKg) {
