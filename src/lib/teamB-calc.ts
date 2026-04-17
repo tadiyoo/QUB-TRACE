@@ -135,39 +135,222 @@ export function teamBMethodologyDetailLines(teamB: TeamBInputs): TeamBMethodolog
     spacePer
   );
 
-  pushDetailPerField(
-    lines,
-    METH_CAT.travel,
-    "Step 3 · Travel & mobility",
-    `${P.travelCommuteKgPerAnsweredField} kg CO₂e per field (illustrative, commute & trips)`,
-    teamB.travelCommute,
-    P.travelCommuteKgPerAnsweredField
-  );
+  const tcL = teamB.travelCommute;
+  const TRANSPORT_EF_L: Record<string, number> = {
+    "Car (petrol/diesel)": 0.1645, "Electric/Hybrid Car": 0.1261,
+    "Carpool": 0.0823, "Bus": 0.1184, "Train": 0.0355,
+    "Bike": 0.0, "Walk": 0.0, "Flight": 0.0, "NA": 0.0,
+  };
+  const ONE_WAY_MID_L: Record<string, number> = {
+    "<10": 5, "<20": 15, "<30": 25, "<40": 35, "<50": 45, "50+": 60,
+  };
+  const CONF_RT_MID_L: Record<string, number> = {
+    "<100": 50, "100-500": 300, "500-1000": 750, "1000-3000": 2000, "3000+": 5000,
+  };
+  const tripsL = teamB.demographics?.d1e_mode === "Part-time" ? 3 : 5;
+
+  const kgCP = (ONE_WAY_MID_L[tcL.t1c_km] ?? 0) * 2 * tripsL * 46 * (TRANSPORT_EF_L[tcL.t1a_primary] ?? 0);
+  if (kgCP > 0) lines.push({
+    reportCategory: METH_CAT.travel, stepRef: "T1c · Commute primary",
+    fieldLabel: "T1a · Primary mode of transport to campus",
+    valueText: `${tcL.t1a_primary}, ${tcL.t1c_km} km one-way`,
+    factorRule: `${ONE_WAY_MID_L[tcL.t1c_km] ?? 0} km × 2 × ${tripsL} × 46 × ${TRANSPORT_EF_L[tcL.t1a_primary] ?? 0} kgCO₂e/km`,
+    kgCo2e: kgCP,
+  });
+
+  const kgCS = (tcL.t1d_sec && tcL.t1d_sec !== "NA")
+      ? (ONE_WAY_MID_L[tcL.t1f_km] ?? 0) * 2 * tripsL * 46 * (TRANSPORT_EF_L[tcL.t1d_sec] ?? 0)
+      : 0;
+  if (kgCS > 0) lines.push({
+    reportCategory: METH_CAT.travel, stepRef: "T1f · Commute secondary",
+    fieldLabel: "T1d · Secondary mode of transport to campus",
+    valueText: `${tcL.t1d_sec}, ${tcL.t1f_km} km one-way`,
+    factorRule: `${ONE_WAY_MID_L[tcL.t1f_km] ?? 0} km × 2 × ${tripsL} × 46 × ${TRANSPORT_EF_L[tcL.t1d_sec] ?? 0} kgCO₂e/km`,
+    kgCo2e: kgCS,
+  });
+
+  const fwDaysL = nn(tcL.t2a_days);
+  const kgFP = (ONE_WAY_MID_L[tcL.t2d_km] ?? 0) * 2 * fwDaysL * (TRANSPORT_EF_L[tcL.t2b_mode] ?? 0);
+  if (kgFP > 0) lines.push({
+    reportCategory: METH_CAT.travel, stepRef: "T2d · Fieldwork primary",
+    fieldLabel: "T2b · Primary mode of transport for fieldwork",
+    valueText: `${tcL.t2b_mode}, ${tcL.t2d_km} km, ${fwDaysL} days/yr`,
+    factorRule: `${ONE_WAY_MID_L[tcL.t2d_km] ?? 0} km × 2 × ${fwDaysL} × ${TRANSPORT_EF_L[tcL.t2b_mode] ?? 0} kgCO₂e/km`,
+    kgCo2e: kgFP,
+  });
+
+  const kgFS = (tcL.t2e_sec && tcL.t2e_sec !== "NA")
+      ? (ONE_WAY_MID_L[tcL.t2g_km] ?? 0) * 2 * fwDaysL * (TRANSPORT_EF_L[tcL.t2e_sec] ?? 0)
+      : 0;
+  if (kgFS > 0) lines.push({
+    reportCategory: METH_CAT.travel, stepRef: "T2g · Fieldwork secondary",
+    fieldLabel: "T2e · Secondary mode of transport for fieldwork",
+    valueText: `${tcL.t2e_sec}, ${tcL.t2g_km} km`,
+    factorRule: `${ONE_WAY_MID_L[tcL.t2g_km] ?? 0} km × 2 × ${fwDaysL} × ${TRANSPORT_EF_L[tcL.t2e_sec] ?? 0} kgCO₂e/km`,
+    kgCo2e: kgFS,
+  });
+
+  const confsL = nn(tcL.t3a_conf);
+  const confRTL = CONF_RT_MID_L[tcL.t3d_rt] ?? 0;
+  const ef3L = tcL.t3b_mode === "Flight"
+      ? (confRTL < 500 ? 0.2459 : confRTL < 3700 ? 0.1510 : 0.1479)
+      : (TRANSPORT_EF_L[tcL.t3b_mode] ?? 0);
+  const kgConfP = confsL * confRTL * ef3L;
+  if (kgConfP > 0) lines.push({
+    reportCategory: METH_CAT.travel, stepRef: "T3d · Conference primary",
+    fieldLabel: "T3b · Primary mode of transport to conferences",
+    valueText: `${tcL.t3b_mode}, ${tcL.t3d_rt} RT, ${confsL} conf/yr`,
+    factorRule: `${confsL} × ${confRTL} km × ${ef3L} kgCO₂e/km`,
+    kgCo2e: kgConfP,
+  });
+
+  const kgConfS = (tcL.t3e_sec && tcL.t3e_sec !== "NA")
+      ? confsL * (ONE_WAY_MID_L[tcL.t3g_km] ?? 0) * 2 * (TRANSPORT_EF_L[tcL.t3e_sec] ?? 0)
+      : 0;
+  if (kgConfS > 0) lines.push({
+    reportCategory: METH_CAT.travel, stepRef: "T3g · Conference secondary",
+    fieldLabel: "T3e · Secondary mode of transport to conferences",
+    valueText: `${tcL.t3e_sec}, ${tcL.t3g_km} km one-way`,
+    factorRule: `${confsL} × ${ONE_WAY_MID_L[tcL.t3g_km] ?? 0} km × 2 × ${TRANSPORT_EF_L[tcL.t3e_sec] ?? 0} kgCO₂e/km`,
+    kgCo2e: kgConfS,
+  });
+
+  const ccL = teamB.computing;
+  const EF_ELEC_L = 0.177;
+  const SCREEN_MID_L: Record<string, number> = {
+    "0-40": 20, "40-80": 60, "80-120": 100, "120-160": 140, "160+": 180,
+  };
+  const DEVICE_POWER_L: Record<string, number> = {
+    "PC": 0.150, "Laptop": 0.065, "other": 0.065,
+  };
+  const monthlyHrsL = SCREEN_MID_L[ccL.c1a_screen] ?? 0;
+  const annualHrsL  = monthlyHrsL * 12;
+  const pwrL        = DEVICE_POWER_L[ccL.c1b_device] ?? 0.065;
+  const kgDevL      = annualHrsL * pwrL * EF_ELEC_L;
+  if (kgDevL > 0) lines.push({
+    reportCategory: METH_CAT.digital, stepRef: "C1b · Primary device",
+    fieldLabel: "C1a–C1b · Project screen time and device type",
+    valueText: `${ccL.c1a_screen} hrs/mo, ${ccL.c1b_device}`,
+    factorRule: `${annualHrsL} hrs/yr × ${pwrL} kW × ${EF_ELEC_L}`,
+    kgCo2e: kgDevL,
+  });
+
+  const MON_MAP_L: Record<string, number> = { "0": 0, "1": 1, "2": 2, "3": 3, "3+": 4 };
+  const monCountL = MON_MAP_L[ccL.c1d_monitors] ?? 0;
+  const kgMonL    = monCountL * 0.027 * annualHrsL * EF_ELEC_L;
+  if (kgMonL > 0) lines.push({
+    reportCategory: METH_CAT.digital, stepRef: "C1d · Additional monitors",
+    fieldLabel: "C1d · Number of additional monitors",
+    valueText: `${ccL.c1d_monitors} monitor(s)`,
+    factorRule: `${monCountL} × 0.027 kW × ${annualHrsL} hrs × ${EF_ELEC_L}`,
+    kgCo2e: kgMonL,
+  });
+
+  const OD_MID_L: Record<string, number> = {
+    "0-50": 25, "50-100": 75, "100-150": 125,
+    "150-200": 175, "200-250": 225, "250+": 300,
+  };
+  const odGbL = OD_MID_L[ccL.c1f_onedrive] ?? 0;
+  const kgOdL = odGbL * 0.28;
+  if (kgOdL > 0) lines.push({
+    reportCategory: METH_CAT.digital, stepRef: "C1f · OneDrive storage",
+    fieldLabel: "C1f · QUB OneDrive storage used",
+    valueText: ccL.c1f_onedrive,
+    factorRule: `${odGbL} GB × 0.28`,
+    kgCo2e: kgOdL,
+  });
+
+  if (ccL.c1g_hdd === "Yes") lines.push({
+    reportCategory: METH_CAT.digital, stepRef: "C1h · External hard drive",
+    fieldLabel: "C1g–C1h · Additional physical hard drive",
+    valueText: "Yes",
+    factorRule: "1 × 1.1",
+    kgCo2e: 1.1,
+  });
 
   if (flags.includeHpcMonthlyKg) {
-    for (const [key, raw] of filledEntries(teamB.hpcMonthlyKg)) {
-      const kg = nn(raw);
-      if (kg > 0) {
-        lines.push({
-          reportCategory: METH_CAT.digital,
-          stepRef: "Step 4 · Monthly HPC (optional)",
-          fieldLabel: teamBFieldLabel(key),
-          valueText: String(raw).trim(),
-          factorRule: "kg CO₂e as entered (monthly total)",
-          kgCo2e: kg,
-        });
-      }
-    }
+    const logTotal = Object.values(teamB.hpcMonthlyKg).reduce((s, v) => s + nn(v), 0);
+    if (logTotal > 0) lines.push({
+      reportCategory: METH_CAT.digital, stepRef: "C2 · HPC (Kelvin2 log)",
+      fieldLabel: "C2 · HPC use - Kelvin2 monthly log",
+      valueText: `${logTotal.toFixed(2)} kg total`,
+      factorRule: "Direct from Kelvin2 log",
+      kgCo2e: logTotal,
+    });
+  } else if (ccL.c2_hpc === "Yes") {
+    const HPC_MID_L: Record<string, number> = {
+      "<10": 5, "10-50": 30, "50-200": 125, "200-1000": 600, ">1000": 1500,
+    };
+    const hpcHrsL = HPC_MID_L[ccL.c2d_hours] ?? 0;
+    const gpuPwrL = ["Yes regularly", "occasionally"].includes(ccL.c2e_gpu) ? 2.5 : 1.0;
+    const kgHpcL  = hpcHrsL * 12 * gpuPwrL * EF_ELEC_L;
+    if (kgHpcL > 0) lines.push({
+      reportCategory: METH_CAT.digital, stepRef: "C2d · HPC compute estimate",
+      fieldLabel: "C2d–C2e · HPC hours per month and GPU use",
+      valueText: `${ccL.c2d_hours} hrs/mo, GPU: ${ccL.c2e_gpu}`,
+      factorRule: `${hpcHrsL} hrs/mo × 12 × ${gpuPwrL} kW × ${EF_ELEC_L}`,
+      kgCo2e: kgHpcL,
+    });
   }
 
-  pushDetailPerField(
-    lines,
-    METH_CAT.digital,
-    "Step 4 · Computing & digital",
-    `${P.computingKgPerAnsweredField} kg CO₂e per field (illustrative, C1–C8)`,
-    teamB.computing,
-    P.computingKgPerAnsweredField
-  );
+  const STOR_MID_L: Record<string, number> = {
+    "Less than 10GB": 5, "10-100GB": 55, "100GB-1TB": 550,
+    "1-10TB": 5500, "more than 10TB": 15000,
+  };
+  const storGbL = STOR_MID_L[ccL.c3c_data] ?? 0;
+  const kgStorL = storGbL * 0.0177;
+  if (kgStorL > 0) lines.push({
+    reportCategory: METH_CAT.digital, stepRef: "C3c · Research data storage",
+    fieldLabel: "C3c · Approximate research data volume",
+    valueText: ccL.c3c_data,
+    factorRule: `${storGbL} GB × 0.0177`,
+    kgCo2e: kgStorL,
+  });
+
+  if (ccL.c7_ai === "Yes") {
+    const AI_MAP_L: Record<string, number> = {
+      "Multiple times per day": 600, "daily": 200, "weekly": 50, "occasionally": 10,
+    };
+    const qpmL  = AI_MAP_L[ccL.c7c_freq] ?? 0;
+    const kgAiL = qpmL * 12 * 0.00034 * EF_ELEC_L;
+    if (kgAiL > 0) lines.push({
+      reportCategory: METH_CAT.digital, stepRef: "C7c · AI tools",
+      fieldLabel: "C7a–C7c · AI tool use and frequency",
+      valueText: `${ccL.c7c_freq} (≈${qpmL} queries/mo)`,
+      factorRule: `${qpmL * 12} queries/yr × 0.00034 × ${EF_ELEC_L}`,
+      kgCo2e: kgAiL,
+    });
+  }
+
+  if (ccL.c8_spec === "Yes") {
+    const C8B_PWR_L: Record<string, number> = {
+      "Lab / analytical instrument": 0.500,
+      "Imaging equipment (CT / MRI)": 3.000,
+      "Engineering / fabrication (3D printer, CNC)": 0.400,
+      "Environmental sensor / drone": 0.250,
+      "AV / recording equipment": 0.150,
+      "High-performance computing hardware": 2.500,
+    };
+    const C8C_L: Record<string, number> = {
+      "Daily": 250, "Several times per week": 150,
+      "weekly": 46, "monthly": 12, "less than once per month": 6,
+    };
+    const C8D_L: Record<string, number> = {
+      "<1": 0.5, "1-4": 2.5, "4-8": 6.0, ">8": 10.0,
+    };
+    const equPwrL  = C8B_PWR_L[ccL.c8b_types] ?? 0.5;
+    const usesL    = C8C_L[ccL.c8c_freq] ?? 0;
+    const hrsL     = C8D_L[ccL.c8d_hours] ?? 0;
+    const sharedL  = Math.max(1, nn(ccL.c8e_shared_count) || 1);
+    const kgSpecL  = (equPwrL * usesL * hrsL * EF_ELEC_L) / sharedL;
+    if (kgSpecL > 0) lines.push({
+      reportCategory: METH_CAT.digital, stepRef: "C8d · Specialist equipment",
+      fieldLabel: "C8b–C8d · Specialist equipment type, frequency and session length",
+      valueText: `${ccL.c8b_types}, ${ccL.c8c_freq}, ${ccL.c8d_hours} hrs/session, shared by ${sharedL}`,
+      factorRule: `${equPwrL} kW × ${usesL} × ${hrsL} hrs × ${EF_ELEC_L} ÷ ${sharedL}`,
+      kgCo2e: kgSpecL,
+    });
+  }
 
   if (flags.includeLabWorkflow) {
     pushDetailPerField(
@@ -362,17 +545,111 @@ export function teamBFootprintAdditions(teamB: TeamBInputs): WizardFootprintAdd 
   if (kgConfSecondary > 0)
     push(a, "wizard_travel", "Conference travel — secondary", kgConfSecondary);
 
-  const compN = filledCount(teamB.computing);
+  const cc = teamB.computing;
+
+  const SCREEN_MID: Record<string, number> = {
+    "0-40": 20, "40-80": 60, "80-120": 100, "120-160": 140, "160+": 180,
+  };
+  const DEVICE_POWER: Record<string, number> = {
+    "PC": 0.150, "Laptop": 0.065, "other": 0.065,
+  };
+  const ONEDRIVE_MID: Record<string, number> = {
+    "0-50": 25, "50-100": 75, "100-150": 125,
+    "150-200": 175, "200-250": 225, "250+": 300,
+  };
+  const HPC_HOURS_MID: Record<string, number> = {
+    "<10": 5, "10-50": 30, "50-200": 125, "200-1000": 600, ">1000": 1500,
+  };
+  const STORAGE_MID: Record<string, number> = {
+    "Less than 10GB": 5,   "10-100GB": 55,
+    "100GB-1TB": 550,      "1-10TB": 5500, "more than 10TB": 15000,
+  };
+  const AI_QUERIES_PM: Record<string, number> = {
+    "Multiple times per day": 600, "daily": 200, "weekly": 50, "occasionally": 10,
+  };
+  const C8B_POWER: Record<string, number> = {
+    "Lab / analytical instrument":                  0.500,
+    "Imaging equipment (CT / MRI)":                 3.000,
+    "Engineering / fabrication (3D printer, CNC)":  0.400,
+    "Environmental sensor / drone":                 0.250,
+    "AV / recording equipment":                     0.150,
+    "High-performance computing hardware":          2.500,
+  };
+  const C8C_USES_PY: Record<string, number> = {
+    "Daily": 250, "Several times per week": 150,
+    "weekly": 46, "monthly": 12, "less than once per month": 6,
+  };
+  const C8D_HOURS_MID: Record<string, number> = {
+    "<1": 0.5, "1-4": 2.5, "4-8": 6.0, ">8": 10.0,
+  };
+  const MONITOR_COUNT_MAP: Record<string, number> = {
+    "0": 0, "1": 1, "2": 2, "3": 3, "3+": 4,
+  };
+
+  const EF_ELEC = 0.177;
+
+// C1b — primary device
+  const monthlyHrs  = SCREEN_MID[cc.c1a_screen] ?? 0;
+  const annualHrs   = monthlyHrs * 12;
+  const devicePower = DEVICE_POWER[cc.c1b_device] ?? 0.065;
+  const kgDevice    = annualHrs * devicePower * EF_ELEC;
+  if (kgDevice > 0)
+    push(a, "wizard_digital", "Primary device", kgDevice);
+
+// C1d — additional monitors
+  const monCount   = MONITOR_COUNT_MAP[cc.c1d_monitors] ?? 0;
+  const kgMonitors = monCount * 0.027 * annualHrs * EF_ELEC;
+  if (kgMonitors > 0)
+    push(a, "wizard_digital", "Additional monitors", kgMonitors);
+
+// C1f — OneDrive storage
+  const onedriveGb = ONEDRIVE_MID[cc.c1f_onedrive] ?? 0;
+  const kgOnedrive = onedriveGb * 0.28;
+  if (kgOnedrive > 0)
+    push(a, "wizard_digital", "OneDrive cloud storage", kgOnedrive);
+
+// C1h — external HDD (EF is per drive/year; treat C1g = Yes as 1 drive)
+  const kgHdd = cc.c1g_hdd === "Yes" ? 1.1 : 0;
+  if (kgHdd > 0)
+    push(a, "wizard_digital", "External hard drive", kgHdd);
+
+// C2 — HPC (prefer Kelvin2 logs if the module is enabled, otherwise estimate)
   if (flags.includeHpcMonthlyKg) {
-    for (const [key, raw] of filledEntries(teamB.hpcMonthlyKg)) {
-      const kg = nn(raw);
-      if (kg > 0) {
-        push(a, "wizard_digital", `${teamBFieldLabel(key)}: ${raw}`, kg);
-      }
-    }
+    const logTotal = Object.values(teamB.hpcMonthlyKg)
+        .reduce((s, v) => s + nn(v), 0);
+    if (logTotal > 0)
+      push(a, "wizard_digital", "HPC — Kelvin2 monthly log", logTotal);
+  } else if (cc.c2_hpc === "Yes") {
+    const hpcHrsMonth = HPC_HOURS_MID[cc.c2d_hours] ?? 0;
+    const gpuPower    = ["Yes regularly", "occasionally"].includes(cc.c2e_gpu) ? 2.5 : 1.0;
+    const kgHpc       = hpcHrsMonth * 12 * gpuPower * EF_ELEC;
+    if (kgHpc > 0)
+      push(a, "wizard_digital", "HPC compute estimate", kgHpc);
   }
-  if (compN > 0) {
-    pushPerField(a, "wizard_digital", teamB.computing, compN * P.computingKgPerAnsweredField);
+
+// C3c — research data storage
+  const storageGb = STORAGE_MID[cc.c3c_data] ?? 0;
+  const kgStorage = storageGb * 0.0177;
+  if (kgStorage > 0)
+    push(a, "wizard_digital", "Research data storage", kgStorage);
+
+// C7c — AI tools
+  if (cc.c7_ai === "Yes") {
+    const queriesPm = AI_QUERIES_PM[cc.c7c_freq] ?? 0;
+    const kgAi      = queriesPm * 12 * 0.00034 * EF_ELEC;
+    if (kgAi > 0)
+      push(a, "wizard_digital", "AI tool use", kgAi);
+  }
+
+// C8d — specialist equipment
+  if (cc.c8_spec === "Yes") {
+    const powerKw      = C8B_POWER[cc.c8b_types] ?? 0.5;
+    const usesPerYr    = C8C_USES_PY[cc.c8c_freq] ?? 0;
+    const hrsSesh      = C8D_HOURS_MID[cc.c8d_hours] ?? 0;
+    const sharedWith   = Math.max(1, nn(cc.c8e_shared_count) || 1);
+    const kgSpecialist = (powerKw * usesPerYr * hrsSesh * EF_ELEC) / sharedWith;
+    if (kgSpecialist > 0)
+      push(a, "wizard_digital", "Specialist equipment", kgSpecialist);
   }
 
   if (flags.includeLabWorkflow) {

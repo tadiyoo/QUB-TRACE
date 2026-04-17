@@ -159,6 +159,15 @@ const DATA_STORAGE_PRIMARY = [
   "external hard drives",
   "Mixed / several places",
 ];
+const C8B_EQUIP_TYPES = [
+  "",
+  "Lab / analytical instrument",
+  "Imaging equipment (CT / MRI)",
+  "Engineering / fabrication (3D printer, CNC)",
+  "Environmental sensor / drone",
+  "AV / recording equipment",
+  "High-performance computing hardware",
+];
 
 export function TeamBReportStep({
   step,
@@ -387,10 +396,30 @@ export function TeamBReportStep({
         <SubHeading>C8 · Specialist equipment (digital context)</SubHeading>
         <FieldGrid>
           <FieldSelect label="C8a · Specialist research equipment?" value={c("c8_spec")} onChange={(v) => sc("c8_spec", v)} options={OPT_YES_NO_NOTSURE} />
-          <FieldText label="C8b · Types (multi / free text)" value={c("c8b_types")} onChange={(v) => sc("c8b_types", v)} className="sm:col-span-2" multiline />
+
+          <FieldSelect
+              label="C8b · Equipment type"
+              value={c("c8b_types")}
+              onChange={(v) => sc("c8b_types", v)}
+              options={C8B_EQUIP_TYPES}
+              className="sm:col-span-2"
+          />
+
           <FieldSelect label="C8c · How often" value={c("c8c_freq")} onChange={(v) => sc("c8c_freq", v)} options={C8_USE_FREQ} />
           <FieldSelect label="C8d · Typical session length (hours)" value={c("c8d_hours")} onChange={(v) => sc("c8d_hours", v)} options={C8_SESSION_HRS} />
-          <FieldText label="C8e · How accessed" value={c("c8e_access")} onChange={(v) => sc("c8e_access", v)} className="sm:col-span-2" />
+
+          <FieldText
+              label="C8e · How accessed"
+              value={c("c8e_access")}
+              onChange={(v) => sc("c8e_access", v)}
+              className="sm:col-span-2"
+          />
+          <FieldText
+              label="C8e · How many people share this equipment? (enter 1 if only you)"
+              value={c("c8e_shared_count")}
+              onChange={(v) => sc("c8e_shared_count", v)}
+          />
+
         </FieldGrid>
         <ExpandableModule
           id="digital-hpc-monthly"
