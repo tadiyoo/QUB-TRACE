@@ -353,22 +353,172 @@ export function teamBMethodologyDetailLines(teamB: TeamBInputs): TeamBMethodolog
   }
 
   if (flags.includeLabWorkflow) {
-    pushDetailPerField(
-      lines,
-      METH_CAT.research,
-      "Research · Lab equipment",
-      `${P.labEquipmentKgPerAnsweredField} kg CO₂e per field (illustrative)`,
-      teamB.labEquipment,
-      P.labEquipmentKgPerAnsweredField
-    );
-    pushDetailPerField(
-      lines,
-      METH_CAT.research,
-      "Research · Lab consumables",
-      `${P.labConsumablesKgPerAnsweredField} kg CO₂e per field (illustrative)`,
-      teamB.labConsumables,
-      P.labConsumablesKgPerAnsweredField
-    );
+    const labM = teamB.labEquipment;
+    const consM = teamB.labConsumables;
+    const EF_E = 0.19553;
+    const EF_W = 0.362;
+    const FREQ_C: Record<string,number> = {
+      "Never":0,"multiple times a day":700,"daily":250,
+      "multiple times a week":150,"weekly":50,"monthly":12,
+    };
+    const FREQ_H: Record<string,number> = {
+      "Never":0,"multiple times a day":500,"daily":250,
+      "multiple times a week":150,"weekly":46,"monthly":12,
+    };
+
+    const labItems: Array<[string, string, number]> = [
+      ["L1 · Sterilisation / autoclave", "l1_sterilisation",
+        (FREQ_C[labM.l1_sterilisation]??0) * ((0.402*EF_W)+(64.375*EF_E)) / 5],
+      ["L2 · Molecular biology (PCR)", "l2_molecular",
+        (FREQ_H[labM.l2_molecular]??0) * 0.14 * EF_E / 5],
+      ["L3 · Cell biology (incubator)", "l3_cell",
+        (FREQ_H[labM.l3_cell]??0) * 0.5 * EF_E / 5],
+      ["L4 · Microscopy & imaging", "l4_microscopy",
+        (FREQ_H[labM.l4_microscopy]??0) * 0.4 * EF_E / 5],
+      ["L5 · X-ray / CT microscopy", "l5_xray",
+        (FREQ_H[labM.l5_xray]??0) * 0.55 * EF_E / 5],
+      ["L6 · Spectroscopy (NMR)", "l6_spectroscopy",
+        (FREQ_H[labM.l6_spectroscopy]??0) * 1.6 * EF_E / 5],
+      ["L7 · Lab infrastructure (fume hood)", "l7_infrastructure",
+        (FREQ_H[labM.l7_infrastructure]??0) * 0.5 * EF_E / 5],
+    ];
+    for (const [question, key, kg] of labItems) {
+      if (kg > 0) lines.push({
+        reportCategory: METH_CAT.research,
+        stepRef: question,
+        fieldLabel: question,
+        valueText: labM[key as keyof typeof labM] as string,
+        factorRule: `Frequency → hrs or cycles/yr × equipment kW × ${EF_E} kgCO₂e/kWh ÷ 5 shared`,
+        kgCo2e: kg,
+      });
+    }
+
+    if (labM.l8a_cold === "Yes") {
+      const L8D_MID: Record<string,number> = {
+        "<50":25,"51-100":75,"101-200":150,"201-400":300,"401-600":500,"600+":700,
+      };
+      const mKwh = L8D_MID[labM.l8d_power] ?? 0;
+      const shared = Math.max(1, nn(labM.l8c_people) || 1);
+      const kgL8 = mKwh * 12 * EF_E / shared;
+      if (kgL8 > 0) lines.push({
+        reportCategory: METH_CAT.research,
+        stepRef: "L8 · Cold storage",
+        fieldLabel: "L8D · Estimated power use (kWh/month)",
+        valueText: `${labM.l8d_power}, shared by ${shared}`,
+        factorRule: `${mKwh} kWh/mo × 12 × ${EF_E} ÷ ${shared}`,
+        kgCo2e: kgL8,
+      });
+    }
+
+    const BOX_M: Record<string,number> = {
+      "0":0,"<1":6,"1-2":18,"3-5":48,"6-10":96,"11-20":180,"20+":250,
+    };
+    const CHEM_M: Record<string,number> = {
+      "0":0,"<1":0.5,"1-5":3,"6-10":8,"11-20":15,"21-50":35,"50+":60,
+    };
+    const GAS_M: Record<string,number> = {
+      "0":0,"<1":0.5,"1-2":1.5,"3-5":4,"6-10":8,
+    };
+
+    const consItems: Array<[string, string, number]> = [
+      ["L9A · Plastic consumables (boxes/month)", consM.l9a_plastic,
+        (BOX_M[consM.l9a_plastic]??0) * 12 * 0.391 * 1.94],
+      ["L10A · Glass consumables (boxes/yr)", consM.l10a_glass,
+        (BOX_M[consM.l10a_glass]??0) * 0.25 * 1.437],
+      ["L11A · Paper consumables (boxes/yr)", consM.l11a_paper,
+        (BOX_M[consM.l11a_paper]??0) * 0.5 * 1.2509],
+      ["L12A · Chemical reagents (bottles/yr)", consM.l12a_chemical,
+        (CHEM_M[consM.l12a_chemical]??0) * 0.5 * 2.5],
+      ["L13A · Molecular biology kits (kits/yr)", consM.l13a_molbio,
+        (BOX_M[consM.l13a_molbio]??0) * 1.39],
+      ["L14A · Enzymes & biological reagents (vials/yr)", consM.l14a_enzyme,
+        (CHEM_M[consM.l14a_enzyme]??0) * 0.01 * 10],
+      ["L18A · Industrial gas cylinders (cylinders/yr)", consM.l18a_gas,
+        (GAS_M[consM.l18a_gas]??0) * 5 * 0.05],
+      ["L19A · Cryogenic supplies (L/yr)", consM.l19a_cryo,
+        (CHEM_M[consM.l19a_cryo]??0) * 0.808 * 0.05],
+    ];
+    for (const [question, value, kg] of consItems) {
+      if (kg > 0) lines.push({
+        reportCategory: METH_CAT.research,
+        stepRef: question,
+        fieldLabel: question,
+        valueText: value,
+        factorRule: "Quantity midpoint × item weight × material EF kgCO₂/kg",
+        kgCo2e: kg,
+      });
+    }
+  }
+
+  if (flags.includeFieldResearch) {
+    const fldM = teamB.field;
+    const ITEM_MASS_M: Record<string,number> = {
+      "Camera":0.5,"Audio Recorder":0.3,"Clothing":0.8,"Bucket (Plastic)":0.3,
+    };
+    const ITEM_EF_M: Record<string,number> = {
+      "Camera":5.648,"Audio Recorder":5.648,"Clothing":22.31,"Bucket (Plastic)":3.095,
+    };
+    const FREQ_UPY: Record<string,number> = {
+      "Daily":250,"Weekly":46,"Monthly":12,"Few times per year":4,
+    };
+    const CHARGE_M: Record<string,number> = { "Camera":0.012,"Audio Recorder":0.003 };
+    const BAIT_EF_M: Record<string,number> = {
+      "Meat-based":14.0,"Vegetable Based":2.5,"Grass/Grain":1.0,"Mixed":5.0,"Gas":1.0,
+    };
+    const BAIT_KG_M: Record<string,number> = {
+      "0.5":0.5,"1":1,"1.5":1.5,"2":2,"2.5":2.5,"3":3,"3+":4,
+    };
+
+    if (fldM.fld_multi === "Yes") {
+      const item = fldM.fld_items;
+      const kgMfr = (ITEM_MASS_M[item]??0) * (ITEM_EF_M[item]??0);
+      if (kgMfr > 0) lines.push({
+        reportCategory: METH_CAT.research,
+        stepRef: "F3 · Field equipment manufacturing",
+        fieldLabel: "F3 · Primary equipment type purchased",
+        valueText: item,
+        factorRule: `${ITEM_MASS_M[item]??0} kg × ${ITEM_EF_M[item]??0} kgCO₂e/kg (ICE Database V3.0)`,
+        kgCo2e: kgMfr,
+      });
+
+      const uses = FREQ_UPY[fldM.fld_freq] ?? 0;
+      if (fldM.fld_recharge === "Yes") {
+        const kgCharge = uses * (CHARGE_M[item]??0.012) * 0.177;
+        if (kgCharge > 0) lines.push({
+          reportCategory: METH_CAT.research,
+          stepRef: "F5 · Equipment recharging",
+          fieldLabel: "F5 · Does this equipment require recharging?",
+          valueText: `${item}, ${fldM.fld_freq}`,
+          factorRule: `${uses} uses/yr × ${CHARGE_M[item]??0.012} kWh × 0.177 kgCO₂e/kWh`,
+          kgCo2e: kgCharge,
+        });
+      }
+      if (fldM.fld_battery === "Yes") {
+        const kgBat = 2 * uses * 0.023 * 4.633;
+        if (kgBat > 0) lines.push({
+          reportCategory: METH_CAT.research,
+          stepRef: "F6 · Battery consumption",
+          fieldLabel: "F6 · Does this equipment use batteries?",
+          valueText: `2 AA × ${uses} uses/yr`,
+          factorRule: `2 × ${uses} × 0.023 kg × 4.633 kgCO₂e/kg`,
+          kgCo2e: kgBat,
+        });
+      }
+    }
+
+    if (fldM.fld_bait === "Yes") {
+      const baitKg = BAIT_KG_M[fldM.fld_bait_kg] ?? 0;
+      const baitEf = BAIT_EF_M[fldM.fld_bait_cat] ?? 0;
+      const kgBait = baitKg * baitEf;
+      if (kgBait > 0) lines.push({
+        reportCategory: METH_CAT.research,
+        stepRef: "F7 · Bait purchase",
+        fieldLabel: "F7b · Bait category",
+        valueText: `${fldM.fld_bait_cat}, ${fldM.fld_bait_kg} kg`,
+        factorRule: `${baitKg} kg × ${baitEf} kgCO₂e/kg (Poore & Nemecek 2018)`,
+        kgCo2e: kgBait,
+      });
+    }
   }
 
   if (flags.includeFieldResearch) {
@@ -653,26 +803,184 @@ export function teamBFootprintAdditions(teamB: TeamBInputs): WizardFootprintAdd 
   }
 
   if (flags.includeLabWorkflow) {
-    const le = filledCount(teamB.labEquipment);
-    const lc = filledCount(teamB.labConsumables);
-    if (le > 0) {
-      pushPerField(a, "wizard_research", teamB.labEquipment, le * P.labEquipmentKgPerAnsweredField);
+    const lab = teamB.labEquipment;
+    const cons = teamB.labConsumables;
+    const EF_ELEC_R = 0.19553;
+    const EF_WATER  = 0.362;
+
+    // Frequency band → cycles or hours per year
+    const FREQ_CYCLES: Record<string, number> = {
+      "Never": 0, "multiple times a day": 700, "daily": 250,
+      "multiple times a week": 150, "weekly": 50, "monthly": 12,
+    };
+    const FREQ_HOURS: Record<string, number> = {
+      "Never": 0, "multiple times a day": 500, "daily": 250,
+      "multiple times a week": 150, "weekly": 46, "monthly": 12,
+    };
+
+    // ── L1 Sterilisation (autoclave representative) ──────────────────────
+    const l1Cycles = FREQ_CYCLES[lab.l1_sterilisation] ?? 0;
+    const kgL1 = l1Cycles * ((0.402 * EF_WATER) + (64.375 * EF_ELEC_R)) / 5;
+    if (kgL1 > 0) push(a, "wizard_research", "L1 · Sterilisation (autoclave)", kgL1);
+
+    // ── L2 Molecular biology (PCR representative) ────────────────────────
+    const l2Hours = FREQ_HOURS[lab.l2_molecular] ?? 0;
+    const kgL2 = l2Hours * 0.14 * EF_ELEC_R / 5;
+    if (kgL2 > 0) push(a, "wizard_research", "L2 · Molecular biology (PCR)", kgL2);
+
+    // ── L3 Cell biology (incubator representative) ───────────────────────
+    const l3Hours = FREQ_HOURS[lab.l3_cell] ?? 0;
+    const kgL3 = l3Hours * 0.5 * EF_ELEC_R / 5;
+    if (kgL3 > 0) push(a, "wizard_research", "L3 · Cell biology (incubator)", kgL3);
+
+    // ── L4 Microscopy (confocal representative, 0.4 kW) ──────────────────
+    const l4Hours = FREQ_HOURS[lab.l4_microscopy] ?? 0;
+    const kgL4 = l4Hours * 0.4 * EF_ELEC_R / 5;
+    if (kgL4 > 0) push(a, "wizard_research", "L4 · Microscopy & imaging", kgL4);
+
+    // ── L5 X-ray / CT (M6 JetStream representative) ──────────────────────
+    const l5Hours = FREQ_HOURS[lab.l5_xray] ?? 0;
+    const kgL5 = l5Hours * 0.55 * EF_ELEC_R / 5;
+    if (kgL5 > 0) push(a, "wizard_research", "L5 · X-ray / CT microscopy", kgL5);
+
+    // ── L6 Spectroscopy (NMR representative) ─────────────────────────────
+    const l6Hours = FREQ_HOURS[lab.l6_spectroscopy] ?? 0;
+    const kgL6 = l6Hours * 1.6 * EF_ELEC_R / 5;
+    if (kgL6 > 0) push(a, "wizard_research", "L6 · Spectroscopy (NMR)", kgL6);
+
+    // ── L7 Infrastructure (fume hood representative) ──────────────────────
+    const l7Hours = FREQ_HOURS[lab.l7_infrastructure] ?? 0;
+    const kgL7 = l7Hours * 0.5 * EF_ELEC_R / 5;
+    if (kgL7 > 0) push(a, "wizard_research", "L7 · Lab infrastructure (fume hood)", kgL7);
+
+    // ── L8 Cold storage (kWh/month band direct) ───────────────────────────
+    const L8D_MID: Record<string, number> = {
+      "<50": 25, "51-100": 75, "101-200": 150,
+      "201-400": 300, "401-600": 500, "600+": 700,
+    };
+    if (lab.l8a_cold === "Yes") {
+      const monthlyKwh = L8D_MID[lab.l8d_power] ?? 0;
+      const sharedPeople = Math.max(1, nn(lab.l8c_people) || 1);
+      const kgL8 = (monthlyKwh * 12 * EF_ELEC_R) / sharedPeople;
+      if (kgL8 > 0) push(a, "wizard_research", "L8 · Cold storage", kgL8);
     }
-    if (lc > 0) {
-      pushPerField(
-        a,
-        "wizard_research",
-        teamB.labConsumables,
-        lc * P.labConsumablesKgPerAnsweredField
-      );
-    }
+
+    // ── CONSUMABLES ───────────────────────────────────────────────────────
+
+    // Band midpoints — boxes or bottles per year
+    const BOX_MID: Record<string, number> = {
+      "0": 0, "<1": 6, "1-2": 18, "3-5": 48,
+      "6-10": 96, "11-20": 180, "20+": 250,
+    };
+    const CHEM_MID: Record<string, number> = {
+      "0": 0, "<1": 0.5, "1-5": 3, "6-10": 8,
+      "11-20": 15, "21-50": 35, "50+": 60,
+    };
+    const GAS_MID: Record<string, number> = {
+      "0": 0, "<1": 0.5, "1-2": 1.5, "3-5": 4, "6-10": 8,
+    };
+
+    // L9 Plastic consumables (pipette tips, PP proxy)
+    // l9a is boxes/month so × 12
+    const l9Boxes = BOX_MID[cons.l9a_plastic] ?? 0;
+    const kgL9 = l9Boxes * 12 * 0.391 * 1.94;
+    if (kgL9 > 0) push(a, "wizard_research", "L9 · Plastic consumables", kgL9);
+
+    // L10 Glass consumables (microscope slides proxy)
+    const l10Boxes = BOX_MID[cons.l10a_glass] ?? 0;
+    const kgL10 = l10Boxes * 0.25 * 1.437;
+    if (kgL10 > 0) push(a, "wizard_research", "L10 · Glass consumables", kgL10);
+
+    // L11 Paper consumables (1.2509 kgCO₂/kg, ~0.5 kg/box proxy)
+    const l11Boxes = BOX_MID[cons.l11a_paper] ?? 0;
+    const kgL11 = l11Boxes * 0.5 * 1.2509;
+    if (kgL11 > 0) push(a, "wizard_research", "L11 · Paper consumables", kgL11);
+
+    // L12 Chemical reagents (ethanol proxy 2.5 kgCO₂/kg, ~0.5 kg/bottle)
+    const l12Bottles = CHEM_MID[cons.l12a_chemical] ?? 0;
+    const kgL12 = l12Bottles * 0.5 * 2.5;
+    if (kgL12 > 0) push(a, "wizard_research", "L12 · Chemical reagents", kgL12);
+
+    // L13 Molecular biology kits (1.39 kgCO₂/kit)
+    const l13Kits = BOX_MID[cons.l13a_molbio] ?? 0;
+    const kgL13 = l13Kits * 1.39;
+    if (kgL13 > 0) push(a, "wizard_research", "L13 · Molecular biology kits", kgL13);
+
+    // L14 Enzymes (10 kgCO₂/kg, ~0.01 kg/vial proxy)
+    const l14Vials = CHEM_MID[cons.l14a_enzyme] ?? 0;
+    const kgL14 = l14Vials * 0.01 * 10;
+    if (kgL14 > 0) push(a, "wizard_research", "L14 · Enzymes & biological reagents", kgL14);
+
+    // L18 Industrial gas cylinders (LN2 proxy: ~5 kg/cyl × 0.05 kgCO₂/kg)
+    const l18Cyls = GAS_MID[cons.l18a_gas] ?? 0;
+    const kgL18 = l18Cyls * 5 * 0.05;
+    if (kgL18 > 0) push(a, "wizard_research", "L18 · Industrial gas cylinders", kgL18);
+
+    // L19 Cryogenic supplies (LN2: 0.05 kgCO₂/kg, density ~0.808 kg/L)
+    const l19Litres = CHEM_MID[cons.l19a_cryo] ?? 0;
+    const kgL19 = l19Litres * 0.808 * 0.05;
+    if (kgL19 > 0) push(a, "wizard_research", "L19 · Cryogenic supplies (LN2)", kgL19);
   }
 
   if (flags.includeFieldResearch) {
-    const fn = filledCount(teamB.field);
-    if (fn > 0) {
-      const perField = P.fieldTravelKgPerAnsweredField + P.fieldLabKgPerAnsweredField;
-      pushPerField(a, "wizard_research", teamB.field, fn * perField);
+    const fld = teamB.field;
+
+    // Typical item masses (kg) for manufacturing EF
+    const ITEM_MASS: Record<string, number> = {
+      "Camera": 0.5, "Audio Recorder": 0.3,
+      "Clothing": 0.8, "Bucket (Plastic)": 0.3,
+    };
+    const ITEM_EF: Record<string, number> = {
+      "Camera": 5.648, "Audio Recorder": 5.648,
+      "Clothing": 22.31, "Bucket (Plastic)": 3.095,
+    };
+    const CHARGE_KWH: Record<string, number> = {
+      "Camera": 0.012, "Audio Recorder": 0.003,
+    };
+    const FREQ_USES_PY: Record<string, number> = {
+      "Daily": 250, "Weekly": 46, "Monthly": 12, "Few times per year": 4,
+    };
+    const EF_ELEC_F  = 0.177;
+    const EF_BATTERY = 4.633; // kgCO₂/kg AA alkaline
+    const BAT_MASS   = 0.023; // kg per AA battery
+
+    if (fld.fld_multi === "Yes") {
+      const itemType = fld.fld_items;
+      const mass = ITEM_MASS[itemType] ?? 0;
+      const mfrEf = ITEM_EF[itemType] ?? 0;
+      const kgMfr = mass * mfrEf;
+      if (kgMfr > 0) push(a, "wizard_research", `F3 · Equipment manufacturing (${itemType})`, kgMfr);
+
+      const usesPerYear = FREQ_USES_PY[fld.fld_freq] ?? 0;
+
+      // F5 recharging
+      if (fld.fld_recharge === "Yes") {
+        const chargeKwh = CHARGE_KWH[itemType] ?? 0.012;
+        const kgCharge  = usesPerYear * chargeKwh * EF_ELEC_F;
+        if (kgCharge > 0) push(a, "wizard_research", `F5 · Equipment recharging (${itemType})`, kgCharge);
+      }
+
+      // F6 batteries (assume 2 AA per use as default)
+      if (fld.fld_battery === "Yes") {
+        const kgBat = 2 * usesPerYear * BAT_MASS * EF_BATTERY;
+        if (kgBat > 0) push(a, "wizard_research", "F6 · Battery consumption", kgBat);
+      }
+    }
+
+    // F7 bait
+    const BAIT_EF: Record<string, number> = {
+      "Meat-based": 14.0, "Vegetable Based": 2.5,
+      "Grass/Grain": 1.0, "Mixed": 5.0, "Gas": 1.0,
+    };
+    const BAIT_KG_MID: Record<string, number> = {
+      "0.5": 0.5, "1": 1, "1.5": 1.5, "2": 2,
+      "2.5": 2.5, "3": 3, "3+": 4,
+    };
+    if (fld.fld_bait === "Yes") {
+      const baitKg = BAIT_KG_MID[fld.fld_bait_kg] ?? 0;
+      const baitEf = BAIT_EF[fld.fld_bait_cat] ?? 0;
+      const kgBait = baitKg * baitEf;
+      if (kgBait > 0) push(a, "wizard_research", `F7 · Bait (${fld.fld_bait_cat})`, kgBait);
     }
   }
 

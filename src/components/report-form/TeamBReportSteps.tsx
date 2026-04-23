@@ -169,6 +169,13 @@ const C8B_EQUIP_TYPES = [
   "High-performance computing hardware",
 ];
 
+const F3_EQUIP_TYPES = [
+  "Camera",
+  "Audio Recorder",
+  "Clothing",
+  "Bucket (Plastic)",
+];
+
 export function TeamBReportStep({
   step,
   teamB,
@@ -361,13 +368,28 @@ export function TeamBReportStep({
           <FieldSelect label="C1l · % meetings / admin" value={c("c1l_meet")} onChange={(v) => sc("c1l_meet", v)} options={PCT_BAND} />
         </FieldGrid>
         <SubHeading>C2 · HPC</SubHeading>
-        <FieldGrid>
-          <FieldSelect label="C2 · Use HPC / clusters?" value={c("c2_hpc")} onChange={(v) => sc("c2_hpc", v)} options={OPT_YES_NO_NOTSURE} />
-          <FieldSelect label="C2b · How often jobs run?" value={c("c2b_freq")} onChange={(v) => sc("c2b_freq", v)} options={HPC_FREQ} />
-          <FieldText label="C2c · Job types (free text / multi)" value={c("c2c_jobs")} onChange={(v) => sc("c2c_jobs", v)} className="sm:col-span-2" multiline />
-          <FieldSelect label="C2d · Hours per month on HPC" value={c("c2d_hours")} onChange={(v) => sc("c2d_hours", v)} options={HPC_HOURS_MONTH} />
-          <FieldSelect label="C2e · GPU use" value={c("c2e_gpu")} onChange={(v) => sc("c2e_gpu", v)} options={GPU_USE_OPTS} />
-        </FieldGrid>
+        <ExpandableModule
+            id="digital-hpc-monthly"
+            title="Monthly HPC carbon (optional)"
+            enabled={teamB.flags.includeHpcMonthlyKg}
+            onEnabledChange={(v) => patchFlag(setTeamB, "includeHpcMonthlyKg", v)}
+            tone="cyan"
+        >
+          <p className="note">
+            You can access information about your HPC usage through the monthly emails
+            issued by the Kelvin2 team once you have registered for an account.
+          </p>
+          <FieldGrid>
+            {MONTHS.map((m) => (
+                <FieldText
+                    key={m.key}
+                    label={`${m.label} (kg CO₂e)`}
+                    value={hpc(m.key)}
+                    onChange={(v) => shpc(m.key, v)}
+                />
+            ))}
+          </FieldGrid>
+        </ExpandableModule>
         <SubHeading>C3 · Cloud</SubHeading>
         <FieldGrid>
           <FieldSelect label="C3a · Cloud services (AWS/Azure/GCP)?" value={c("c3_cloud")} onChange={(v) => sc("c3_cloud", v)} options={OPT_YES_NO_NOTSURE} />
@@ -421,24 +443,6 @@ export function TeamBReportStep({
           />
 
         </FieldGrid>
-        <ExpandableModule
-          id="digital-hpc-monthly"
-          title="Monthly HPC carbon (optional)"
-          enabled={teamB.flags.includeHpcMonthlyKg}
-          onEnabledChange={(v) => patchFlag(setTeamB, "includeHpcMonthlyKg", v)}
-          tone="cyan"
-        >
-          <FieldGrid>
-            {MONTHS.map((m) => (
-              <FieldText
-                key={m.key}
-                label={`${m.label} (kg CO₂e)`}
-                value={hpc(m.key)}
-                onChange={(v) => shpc(m.key, v)}
-              />
-            ))}
-          </FieldGrid>
-        </ExpandableModule>
       </div>
     );
   }
@@ -549,12 +553,11 @@ export function TeamBReportStep({
             <FieldGrid>
               <FieldText label="F1 · Field studies this year (count)" value={f("fld_studies")} onChange={(v) => sf("fld_studies", v)} />
               <FieldSelect label="F2 · Purchased multi-use field equipment?" value={f("fld_multi")} onChange={(v) => sf("fld_multi", v)} options={OPT_YES_NO} />
-              <FieldText
-                label="F3 · Equipment items"
-                value={f("fld_items")}
-                onChange={(v) => sf("fld_items", v)}
-                className="sm:col-span-2"
-                multiline
+              <FieldSelect
+                  label="F3 · Primary equipment type purchased"
+                  value={f("fld_items")}
+                  onChange={(v) => sf("fld_items", v)}
+                  options={F3_EQUIP_TYPES}
               />
               <FieldSelect label="F4 · Use frequency" value={f("fld_freq")} onChange={(v) => sf("fld_freq", v)} options={["", "Daily", "Weekly", "Monthly", "Few times per year"]} />
               <FieldSelect label="F5 · Requires recharging?" value={f("fld_recharge")} onChange={(v) => sf("fld_recharge", v)} options={OPT_YES_NO} />
