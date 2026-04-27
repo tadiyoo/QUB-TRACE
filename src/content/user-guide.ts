@@ -1,7 +1,7 @@
 /** TRACE user-facing guide text and tables (from TRACE B User Documentation draft, cleaned). */
 
 export const GUIDE_PDF_HREF =
-  "https://researchfootprinttool.com/Carbon%20Footprinting%20Tool%20Guidance.pdf";
+  "/user-guide.pdf";
 
 export const guideSections = {
   intro:
