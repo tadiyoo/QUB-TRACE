@@ -284,6 +284,13 @@ export function TeamBReportStep({
           <FieldSelect label="S4a · Other QUB spaces?" value={s("s4a_other")} onChange={(v) => ss("s4a_other", v)} options={OPT_YES_NO} />
           <FieldText label="S4b · Which spaces" value={s("s4b_other_detail")} onChange={(v) => ss("s4b_other_detail", v)} className="sm:col-span-2" />
           <FieldSelect label="S4c · Hours per week in those spaces" value={s("s4c_other_hours")} onChange={(v) => ss("s4c_other_hours", v)} options={HOUR_BANDS} />
+
+          {/* SU1 – Assigned office/desk area */}
+          <FieldText
+            label="SU1 · Assigned office/desk space area (m²)"
+            value={s("su1_desk_area")}
+            onChange={(v) => ss("su1_desk_area", v)}
+          />
         </FieldGrid>
         <SubHeading>Printing & kitchen</SubHeading>
         <FieldGrid>
@@ -299,7 +306,6 @@ export function TeamBReportStep({
           <FieldSelect label="S6 · Hot water tap" value={s("s6_hot")} onChange={(v) => ss("s6_hot", v)} options={USE_BAND} />
           <FieldSelect label="S6 · Cold water tap" value={s("s6_cold")} onChange={(v) => ss("s6_cold", v)} options={USE_BAND} />
           <FieldSelect label="S6 · Water dispenser" value={s("s6_disp")} onChange={(v) => ss("s6_disp", v)} options={USE_BAND} />
-          <FieldSelect label="S7a · Bathroom visits / day (band)" value={s("s7_bathroom")} onChange={(v) => ss("s7_bathroom", v)} options={USE_BAND} />
         </FieldGrid>
       </div>
     );
@@ -569,6 +575,33 @@ export function TeamBReportStep({
             </FieldGrid>
           </ExpandableModule>
 
+          {/*<ExpandableModule*/}
+          {/*  id="animal-module"*/}
+          {/*  title="Animal research"*/}
+          {/*  enabled={teamB.flags.includeAnimalResearch}*/}
+          {/*  onEnabledChange={(v) => patchFlag(setTeamB, "includeAnimalResearch", v)}*/}
+          {/*  tone="rose"*/}
+          {/*>*/}
+          {/*  <FieldGrid>*/}
+          {/*    <FieldText label="A1 · Animal studies this year" value={a("an_studies")} onChange={(v) => sa("an_studies", v)} />*/}
+          {/*    <FieldText label="A2 · Species" value={a("an_species")} onChange={(v) => sa("an_species", v)} />*/}
+          {/*    <FieldText label="A2a · How many?" value={a("an_count")} onChange={(v) => sa("an_count", v)} />*/}
+          {/*    <FieldSelect*/}
+          {/*      label="A2b · Organism class / size"*/}
+          {/*      value={a("an_class")}*/}
+          {/*      onChange={(v) => sa("an_class", v)}*/}
+          {/*      options={ORGANISM_CLASS}*/}
+          {/*      className="sm:col-span-2"*/}
+          {/*    />*/}
+          {/*    <FieldSelect label="A2c · Diet" value={a("an_diet")} onChange={(v) => sa("an_diet", v)} options={["", "Carnivore", "Herbivore", "Omnivore"]} />*/}
+          {/*    <FieldSelect label="A2d · Hosted externally?" value={a("an_external")} onChange={(v) => sa("an_external", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldSelect label="A3 · Purchased feed?" value={a("an_feed")} onChange={(v) => sa("an_feed", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldSelect label="A3a · Feed amount (kg band)" value={a("an_feed_kg")} onChange={(v) => sa("an_feed_kg", v)} options={BAIT_KG_BAND} />*/}
+          {/*    <FieldSelect label="A3b · Feed category" value={a("an_feed_type")} onChange={(v) => sa("an_feed_type", v)} options={FEED_CATEGORY} />*/}
+          {/*    <FieldText label="A3c · Other feed" value={a("an_feed_other")} onChange={(v) => sa("an_feed_other", v)} className="sm:col-span-2" />*/}
+          {/*  </FieldGrid>*/}
+          {/*</ExpandableModule>*/}
+
           <ExpandableModule
             id="animal-module"
             title="Animal research"
@@ -577,24 +610,165 @@ export function TeamBReportStep({
             tone="rose"
           >
             <FieldGrid>
-              <FieldText label="A1 · Animal studies this year" value={a("an_studies")} onChange={(v) => sa("an_studies", v)} />
-              <FieldText label="A2 · Species" value={a("an_species")} onChange={(v) => sa("an_species", v)} />
-              <FieldText label="A2a · How many?" value={a("an_count")} onChange={(v) => sa("an_count", v)} />
+              {/* AN1a – Animal type(s) */}
               <FieldSelect
-                label="A2b · Organism class / size"
-                value={a("an_class")}
-                onChange={(v) => sa("an_class", v)}
-                options={ORGANISM_CLASS}
+                label="AN1a · Animal type(s) used in research"
+                value={a("an_type")}
+                onChange={(v) => sa("an_type", v)}
+                options={[
+                  "", "Dairy cow", "Beef cattle", "Sheep", "Pig/swine", "Goat",
+                  "Chicken", "Turkey", "Duck", "Horse", "Ostrich",
+                  "Mules/Asses", "Camel", "Rabbit", "Fur-bearing animals", "Other",
+                ]}
                 className="sm:col-span-2"
               />
-              <FieldSelect label="A2c · Diet" value={a("an_diet")} onChange={(v) => sa("an_diet", v)} options={["", "Carnivore", "Herbivore", "Omnivore"]} />
-              <FieldSelect label="A2d · Hosted externally?" value={a("an_external")} onChange={(v) => sa("an_external", v)} options={OPT_YES_NO} />
-              <FieldSelect label="A3 · Purchased feed?" value={a("an_feed")} onChange={(v) => sa("an_feed", v)} options={OPT_YES_NO} />
-              <FieldSelect label="A3a · Feed amount (kg band)" value={a("an_feed_kg")} onChange={(v) => sa("an_feed_kg", v)} options={BAIT_KG_BAND} />
-              <FieldSelect label="A3b · Feed category" value={a("an_feed_type")} onChange={(v) => sa("an_feed_type", v)} options={FEED_CATEGORY} />
-              <FieldText label="A3c · Other feed" value={a("an_feed_other")} onChange={(v) => sa("an_feed_other", v)} className="sm:col-span-2" />
+
+              {/* AN1b – Head count */}
+              <FieldText
+                label="AN1b · Head of this animal type"
+                value={a("an_head_count")}
+                onChange={(v) => sa("an_head_count", v)}
+              />
+
+              {/* AN1c – Average liveweight */}
+              <FieldText
+                label="AN1c · Average animal liveweight"
+                value={a("an_liveweight")}
+                onChange={(v) => sa("an_liveweight", v)}
+              />
+
+              {/* AN1d – DMI (ruminants only) */}
+              <FieldText
+                label="AN1d · Dry matter intake / DMI (ruminants only)"
+                value={a("an_dmi")}
+                onChange={(v) => sa("an_dmi", v)}
+                placeholder="Numeric or N/A"
+              />
+
+              {/* AN3a – Manure management */}
+              <FieldSelect
+                label="AN3a · Manure management system"
+                value={a("an_manure")}
+                onChange={(v) => sa("an_manure", v)}
+                options={[
+                  "",
+                  "Slurry – above/below ground tanks",
+                  "Slurry – lagoon",
+                  "Slurry – bag",
+                  "Slurry – weeping wall",
+                  "FYM – stockpile",
+                  "FYM – compost",
+                  "Anaerobic digestion",
+                  "Direct spread",
+                  "Deep bedding",
+                  "Dry lot",
+                  "Poultry with litter",
+                  "Poultry without litter",
+                  "Composting",
+                  "Aerobic treatment",
+                ]}
+                className="sm:col-span-2"
+              />
+
+              {/* AN4 – Purchase feed? */}
+              <FieldSelect
+                label="AN4 · Do you purchase feed for your research animals?"
+                value={a("an_feed")}
+                onChange={(v) => sa("an_feed", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* AN4a – Feed type(s) */}
+              <FieldSelect
+                label="AN4a · Feed type(s) purchased"
+                value={a("an_feed_type")}
+                onChange={(v) => sa("an_feed_type", v)}
+                options={[
+                  "", "Ground corn", "Corn grain", "Flaked corn",
+                  "Dehydrated beet pulp", "Soybean meal", "Commercial concentrate",
+                  "Minerals/additives/vitamins", "Grass hay", "Mixed hay",
+                  "Alfalfa hay", "Corn silage", "Straw",
+                ]}
+                className="sm:col-span-2"
+              />
+
+              {/* AN4b – Feed kg/year */}
+              <FieldText
+                label="AN4b · Feed purchased per year (kg)"
+                value={a("an_feed_kg")}
+                onChange={(v) => sa("an_feed_kg", v)}
+              />
+
+              {/* AN5 – Purchase fertilisers/seeds? */}
+              <FieldSelect
+                label="AN5 · Do you purchase fertilisers or seeds for your research?"
+                value={a("an_fert")}
+                onChange={(v) => sa("an_fert", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* AN5a – Fertiliser/seed type(s) */}
+              <FieldSelect
+                label="AN5a · Fertiliser/seed type(s) purchased"
+                value={a("an_fert_type")}
+                onChange={(v) => sa("an_fert_type", v)}
+                options={[
+                  "", "Urea", "Ammonium nitrate",
+                  "Diammonium phosphate", "Seeds",
+                ]}
+                className="sm:col-span-2"
+              />
+
+              {/* AN5b – Fertiliser/seed kg/year */}
+              <FieldText
+                label="AN5b · Fertiliser/seed purchased per year (kg)"
+                value={a("an_fert_kg")}
+                onChange={(v) => sa("an_fert_kg", v)}
+              />
+
+              {/* AN6 – Reporting period */}
+              <FieldText
+                label="AN6 · Reporting period for animal research"
+                value={a("an_period")}
+                onChange={(v) => sa("an_period", v)}
+              />
             </FieldGrid>
           </ExpandableModule>
+
+          {/*<ExpandableModule*/}
+          {/*  id="materials-module"*/}
+          {/*  title="Other resources & materials"*/}
+          {/*  enabled={teamB.flags.includeOtherMaterials}*/}
+          {/*  onEnabledChange={(v) => patchFlag(setTeamB, "includeOtherMaterials", v)}*/}
+          {/*  tone="slate"*/}
+          {/*>*/}
+          {/*  <FieldGrid>*/}
+          {/*    <FieldSelect label="R1 · Paper / paper-based resources?" value={o("or_paper")} onChange={(v) => so("or_paper", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldText*/}
+          {/*      label="R1a · Types used (list)"*/}
+          {/*      value={o("or_paper_types")}*/}
+          {/*      onChange={(v) => so("or_paper_types", v)}*/}
+          {/*      className="sm:col-span-2"*/}
+          {/*      multiline*/}
+          {/*    />*/}
+          {/*    <FieldSelect label="R1b · Amount used (band)" value={o("or_paper_amt")} onChange={(v) => so("or_paper_amt", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R2 · Metal resources?" value={o("or_metal")} onChange={(v) => so("or_metal", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldSelect label="R2a · Amount (kg band)" value={o("or_metal_kg")} onChange={(v) => so("or_metal_kg", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R2c · Recycled (kg band)" value={o("or_metal_rec")} onChange={(v) => so("or_metal_rec", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R3 · Wood / wood-based?" value={o("or_wood")} onChange={(v) => so("or_wood", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldSelect label="R3a · Amount (kg band)" value={o("or_wood_kg")} onChange={(v) => so("or_wood_kg", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R3c · Recycled (kg band)" value={o("or_wood_rec")} onChange={(v) => so("or_wood_rec", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R4 · Plastic resources?" value={o("or_plastic")} onChange={(v) => so("or_plastic", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldSelect label="R4a · Amount (kg band)" value={o("or_plastic_kg")} onChange={(v) => so("or_plastic_kg", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R4c · Recycled (kg band)" value={o("or_plastic_rec")} onChange={(v) => so("or_plastic_rec", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R5 · Glass resources?" value={o("or_glass")} onChange={(v) => so("or_glass", v)} options={OPT_YES_NO} />*/}
+          {/*    <FieldSelect label="R5a · Amount (kg band)" value={o("or_glass_kg")} onChange={(v) => so("or_glass_kg", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R5c · Recycled (kg band)" value={o("or_glass_rec")} onChange={(v) => so("or_glass_rec", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldText label="R6 · Other resources (describe)" value={o("or_other")} onChange={(v) => so("or_other", v)} className="sm:col-span-2" multiline />*/}
+          {/*    <FieldSelect label="R6a · Amount (kg band)" value={o("or_other_kg")} onChange={(v) => so("or_other_kg", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*    <FieldSelect label="R6c · Recycled (kg band)" value={o("or_other_rec")} onChange={(v) => so("or_other_rec", v)} options={MATERIAL_KG_BAND} />*/}
+          {/*  </FieldGrid>*/}
+          {/*</ExpandableModule>*/}
 
           <ExpandableModule
             id="materials-module"
@@ -604,30 +778,153 @@ export function TeamBReportStep({
             tone="slate"
           >
             <FieldGrid>
-              <FieldSelect label="R1 · Paper / paper-based resources?" value={o("or_paper")} onChange={(v) => so("or_paper", v)} options={OPT_YES_NO} />
-              <FieldText
-                label="R1a · Types used (list)"
+              {/* R1 – Paper */}
+              <FieldSelect
+                label="R1 · Do you use any paper or paper-based resources?"
+                value={o("or_paper")}
+                onChange={(v) => so("or_paper", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* R1a – Paper types */}
+              <FieldSelect
+                label="R1a · Paper type(s) used this year"
                 value={o("or_paper_types")}
                 onChange={(v) => so("or_paper_types", v)}
+                options={[
+                  "",
+                  "Printing A4", "Printing A3", "Printing A2", "Printing A1", "Printing A0",
+                  "Printing Other",
+                  "Notebook A4", "Notebook A5", "Notebook Other",
+                  "Textbook",
+                  "Book (Literature)",
+                  "Journal",
+                  "Plain Paper A5", "Plain Paper A4", "Plain Paper A3",
+                  "Plain Paper A2", "Plain Paper A1", "Plain Paper A0",
+                  "Plain Paper Other",
+                  "Notecards",
+                  "Post-it Notes",
+                  "Flip-Chart",
+                ]}
                 className="sm:col-span-2"
-                multiline
               />
-              <FieldSelect label="R1b · Amount used (band)" value={o("or_paper_amt")} onChange={(v) => so("or_paper_amt", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R2 · Metal resources?" value={o("or_metal")} onChange={(v) => so("or_metal", v)} options={OPT_YES_NO} />
-              <FieldSelect label="R2a · Amount (kg band)" value={o("or_metal_kg")} onChange={(v) => so("or_metal_kg", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R2c · Recycled (kg band)" value={o("or_metal_rec")} onChange={(v) => so("or_metal_rec", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R3 · Wood / wood-based?" value={o("or_wood")} onChange={(v) => so("or_wood", v)} options={OPT_YES_NO} />
-              <FieldSelect label="R3a · Amount (kg band)" value={o("or_wood_kg")} onChange={(v) => so("or_wood_kg", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R3c · Recycled (kg band)" value={o("or_wood_rec")} onChange={(v) => so("or_wood_rec", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R4 · Plastic resources?" value={o("or_plastic")} onChange={(v) => so("or_plastic", v)} options={OPT_YES_NO} />
-              <FieldSelect label="R4a · Amount (kg band)" value={o("or_plastic_kg")} onChange={(v) => so("or_plastic_kg", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R4c · Recycled (kg band)" value={o("or_plastic_rec")} onChange={(v) => so("or_plastic_rec", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R5 · Glass resources?" value={o("or_glass")} onChange={(v) => so("or_glass", v)} options={OPT_YES_NO} />
-              <FieldSelect label="R5a · Amount (kg band)" value={o("or_glass_kg")} onChange={(v) => so("or_glass_kg", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R5c · Recycled (kg band)" value={o("or_glass_rec")} onChange={(v) => so("or_glass_rec", v)} options={MATERIAL_KG_BAND} />
-              <FieldText label="R6 · Other resources (describe)" value={o("or_other")} onChange={(v) => so("or_other", v)} className="sm:col-span-2" multiline />
-              <FieldSelect label="R6a · Amount (kg band)" value={o("or_other_kg")} onChange={(v) => so("or_other_kg", v)} options={MATERIAL_KG_BAND} />
-              <FieldSelect label="R6c · Recycled (kg band)" value={o("or_other_rec")} onChange={(v) => so("or_other_rec", v)} options={MATERIAL_KG_BAND} />
+
+              {/* R1b – Paper amount */}
+              <FieldText
+                label="R1b · How much of this resource used this year?"
+                value={o("or_paper_amt")}
+                onChange={(v) => so("or_paper_amt", v)}
+              />
+
+              {/* R2 – Metal */}
+              <FieldSelect
+                label="R2 · Do you use any metal resources?"
+                value={o("or_metal")}
+                onChange={(v) => so("or_metal", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* R2a – Metal amount */}
+              <FieldText
+                label="R2a · How much of this resource used this year?"
+                value={o("or_metal_kg")}
+                onChange={(v) => so("or_metal_kg", v)}
+              />
+
+              {/* R2c – Metal recycled */}
+              <FieldText
+                label="R2c · How much was recycled?"
+                value={o("or_metal_rec")}
+                onChange={(v) => so("or_metal_rec", v)}
+              />
+
+              {/* R3 – Wood */}
+              <FieldSelect
+                label="R3 · Do you use any wood or wood-based resources?"
+                value={o("or_wood")}
+                onChange={(v) => so("or_wood", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* R3a – Wood amount */}
+              <FieldText
+                label="R3a · How much of this resource used this year?"
+                value={o("or_wood_kg")}
+                onChange={(v) => so("or_wood_kg", v)}
+              />
+
+              {/* R3c – Wood recycled */}
+              <FieldText
+                label="R3c · How much was recycled?"
+                value={o("or_wood_rec")}
+                onChange={(v) => so("or_wood_rec", v)}
+              />
+
+              {/* R4 – Plastic */}
+              <FieldSelect
+                label="R4 · Do you use any plastic or plastic-based resources?"
+                value={o("or_plastic")}
+                onChange={(v) => so("or_plastic", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* R4a – Plastic amount */}
+              <FieldText
+                label="R4a · How much of this resource used this year?"
+                value={o("or_plastic_kg")}
+                onChange={(v) => so("or_plastic_kg", v)}
+              />
+
+              {/* R4c – Plastic recycled */}
+              <FieldText
+                label="R4c · How much was recycled?"
+                value={o("or_plastic_rec")}
+                onChange={(v) => so("or_plastic_rec", v)}
+              />
+
+              {/* R5 – Glass */}
+              <FieldSelect
+                label="R5 · Do you use any glass or glass-based resources?"
+                value={o("or_glass")}
+                onChange={(v) => so("or_glass", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* R5a – Glass amount */}
+              <FieldText
+                label="R5a · How much of this resource used this year?"
+                value={o("or_glass_kg")}
+                onChange={(v) => so("or_glass_kg", v)}
+              />
+
+              {/* R5c – Glass recycled */}
+              <FieldText
+                label="R5c · How much was recycled?"
+                value={o("or_glass_rec")}
+                onChange={(v) => so("or_glass_rec", v)}
+              />
+
+              {/* R6 – Other */}
+              <FieldSelect
+                label="R6 · Do you use any other resources?"
+                value={o("or_other")}
+                onChange={(v) => so("or_other", v)}
+                options={OPT_YES_NO}
+              />
+
+              {/* R6a – Other amount */}
+              <FieldText
+                label="R6a · How much of this resource used this year?"
+                value={o("or_other_kg")}
+                onChange={(v) => so("or_other_kg", v)}
+              />
+
+              {/* R6c – Other recycled */}
+              <FieldText
+                label="R6c · How much was recycled?"
+                value={o("or_other_rec")}
+                onChange={(v) => so("or_other_rec", v)}
+              />
             </FieldGrid>
           </ExpandableModule>
         </div>

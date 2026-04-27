@@ -19,6 +19,11 @@ export const TEAM_B_PLACEHOLDER = {
   animalKgPerAnsweredField: 11.0,
   otherResourcesKgPerAnsweredField: 2.4,
   researchProfileKgPerAnsweredField: 0.9,
+  qub_gas: 1.0,
+  qub_electricity: 1.0,
+  qub_water:1.0,
+  qub_waste: 1.0,
+  ef_waste: 1.0
 } as const;
 
 /** One answered field row for “How we obtained these results” (per-field, not rolled up). */
@@ -125,15 +130,34 @@ export function teamBMethodologyDetailLines(teamB: TeamBInputs): TeamBMethodolog
     P.demographicsTotalKgPerField
   );
 
-  const spacePer = P.spaceLabKgPerAnsweredField + P.spaceSiteUseKgPerAnsweredField;
+  const OFFICE_AREA_M2 = Number(teamB.spaceUse?.su1_desk_area) || 0;
+
+  const tCO2e_space =
+    1000 *
+    (OFFICE_AREA_M2 *
+      (P.qub_gas * 0.2027 +
+        P.qub_electricity * 0.19553 +
+        P.qub_water * 0.1913 +
+        P.qub_waste * P.ef_waste));
+
   pushDetailPerField(
     lines,
     METH_CAT.space,
     "Step 2 · Campus & space",
-    `${spacePer} kg CO₂e per field (illustrative, lab allocation + site habits)`,
+    `${tCO2e_space.toFixed(4)} kg CO₂e (office area × QUB utility emissions)`,
     teamB.spaceUse,
-    spacePer
+    tCO2e_space
   );
+
+  // const spacePer = P.spaceLabKgPerAnsweredField + P.spaceSiteUseKgPerAnsweredField;
+  // pushDetailPerField(
+  //   lines,
+  //   METH_CAT.space,
+  //   "Step 2 · Campus & space",
+  //   `${spacePer} kg CO₂e per field (illustrative, lab allocation + site habits)`,
+  //   teamB.spaceUse,
+  //   spacePer
+  // );
 
   const tcL = teamB.travelCommute;
   const TRANSPORT_EF_L: Record<string, number> = {
@@ -533,27 +557,398 @@ export function teamBMethodologyDetailLines(teamB: TeamBInputs): TeamBMethodolog
     );
   }
 
+  // if (flags.includeAnimalResearch) {
+  //   pushDetailPerField(
+  //     lines,
+  //     METH_CAT.research,
+  //     "Research · Animal studies",
+  //     `${P.animalKgPerAnsweredField} kg CO₂e per field (illustrative)`,
+  //     teamB.animal,
+  //     P.animalKgPerAnsweredField
+  //   );
+  // }
+
   if (flags.includeAnimalResearch) {
-    pushDetailPerField(
-      lines,
-      METH_CAT.research,
-      "Research · Animal studies",
-      `${P.animalKgPerAnsweredField} kg CO₂e per field (illustrative)`,
-      teamB.animal,
-      P.animalKgPerAnsweredField
-    );
+  const an = teamB.animal;
+
+  // ── Lookup tables ──────────────────────────────────────────────────────────
+
+  const ENTERIC_RUMINANT = {
+    "Dairy cow":   { slope: 15.8185, intercept: 88.6002 },
+    "Beef cattle": { slope: 15.8185, intercept: 88.6002 },
+    "Sheep":       { slope: 12.3894, intercept: 5.1595  },
+    "Other cattle":{ slope: 17.5653, intercept: 45.8688 },
+  };
+
+  const ENTERIC_NON_RUMINANT_EF = {
+    "Pig/swine": 1.5,
+    "Goat":      9,
+    "Horse":     18,
+    "Ostrich":   5,
+    "Mules/Asses": 10,
+  };
+
+  const VS_RATE = {
+    "Dairy cow":   0.013, "Beef cattle": 0.013,
+    "Sheep":       0.008, "Pig/swine":   0.010,
+    "Goat":        0.008, "Horse":       0.012,
+    "Ostrich":     0.006, "Mules/Asses": 0.010,
+    "Camel":       0.010, "Rabbit":      0.005,
+    "Chicken":     0.004, "Turkey":      0.005,
+    "Duck":        0.004, "Fur-bearing animals": 0.005,
+  };
+
+  const Bo_VALS = {
+    "Dairy cow": 0.24, "Beef cattle": 0.18,
+    "Sheep": 0.19,    "Pig/swine": 0.45,
+  };
+
+  const MCF_VALS = {
+    "Slurry – above/below ground tanks": 17,
+    "Slurry – lagoon": 17,
+    "Slurry – bag": 17,
+    "Slurry – weeping wall": 17,
+    "Anaerobic digestion": 3,
+    "Direct spread": 0.1,
+    "FYM – stockpile": 2,
+    "FYM – compost": 0.5,
+    "Deep bedding": 7,
+    "Dry lot": 1,
+    "Poultry with litter": 1.5,
+    "Poultry without litter": 1.5,
+    "Composting": 0.5,
+    "Aerobic treatment": 0.1,
+  };
+
+  const N_RATE = {
+    "Dairy cow": 0.0045, "Beef cattle": 0.0035,
+    "Sheep": 0.0015,     "Pig/swine": 0.0035,
+    "Goat": 0.0015,      "Horse": 0.004,
+    "Ostrich": 0.003,    "Mules/Asses": 0.003,
+    "Camel": 0.003,      "Rabbit": 0.002,
+    "Chicken": 0.001,    "Turkey": 0.002,
+    "Duck": 0.001,       "Fur-bearing animals": 0.002,
+  };
+
+  const EF_N2O_SYSTEM = {
+    "Slurry – above/below ground tanks": 0.5,
+    "Slurry – lagoon": 0.5,
+    "Slurry – bag": 0.5,
+    "Slurry – weeping wall": 0.5,
+    "FYM – stockpile": 2,
+    "FYM – compost": 1,
+    "Anaerobic digestion": 0,
+    "Direct spread": 2,
+    "Deep bedding": 2,
+    "Dry lot": 2,
+    "Poultry with litter": 2,
+    "Poultry without litter": 1,
+    "Composting": 1,
+    "Aerobic treatment": 0.5,
+  };
+
+  const FRAC_VOL = {
+    "Slurry – above/below ground tanks": 0.48,
+    "Slurry – lagoon": 0.48, "Slurry – bag": 0.48,
+    "Slurry – weeping wall": 0.48,
+    "FYM – stockpile": 0.30, "FYM – compost": 0.30,
+    "Anaerobic digestion": 0.10, "Direct spread": 0.07,
+    "Deep bedding": 0.30, "Dry lot": 0.20,
+    "Poultry with litter": 0.40, "Poultry without litter": 0.40,
+    "Composting": 0.30, "Aerobic treatment": 0.15,
+  };
+
+  const FRAC_LEACH = {
+    "Slurry – above/below ground tanks": 0.02,
+    "Slurry – lagoon": 0.02, "Slurry – bag": 0.02,
+    "Slurry – weeping wall": 0.02,
+    "FYM – stockpile": 0.02, "FYM – compost": 0.02,
+    "Anaerobic digestion": 0.02, "Direct spread": 0.30,
+    "Deep bedding": 0.02, "Dry lot": 0.10,
+    "Poultry with litter": 0.02, "Poultry without litter": 0.02,
+    "Composting": 0.02, "Aerobic treatment": 0.02,
+  };
+
+  const FEED_EF = {
+    "Ground corn": 0.92, "Corn grain": 0.56, "Flaked corn": 0.85,
+    "Dehydrated beet pulp": 0.46, "Soybean meal": 2.78,
+    "Commercial concentrate": 1.00, "Minerals/additives/vitamins": 1.17,
+    "Grass hay": 0.23, "Mixed hay": 0.20, "Alfalfa hay": 0.07,
+    "Corn silage": 0.14, "Straw": 0.04,
+  };
+
+  const FERT_EF = {
+    "Urea": 1.6, "Ammonium nitrate": 5.5,
+    "Diammonium phosphate": 1.6, "Seeds": 0.3,
+  };
+
+  const GWP_CH4  = 28;
+  const GWP_N2O  = 265;
+  const N2O_CONV = 28 / 44; // N₂O-N → N₂O
+  const EF_VOL   = 1 / 100;  // 1%
+  const EF_LEACH = 1.1 / 100; // 1.1%
+
+  // ── Input values ───────────────────────────────────────────────────────────
+
+  const animal_type   = an?.an_type       || "";
+  const head          = Number(an?.an_head_count)  || 0;
+  const liveweight    = Number(an?.an_liveweight)  || 0; // tonnes
+  const dmi           = Number(an?.an_dmi)         || 0; // kg DM/day/head
+  const manure_system = an?.an_manure     || "";
+  const reporting_weeks = Number(an?.an_period) || 52;
+  const scale_factor  = reporting_weeks / 52;
+
+  // ── AN2 · Enteric CH₄ ─────────────────────────────────────────────────────
+
+  let kgCO2e_enteric = 0;
+
+  // @ts-ignore
+    if (ENTERIC_RUMINANT[animal_type]) {
+    // @ts-ignore
+      const { slope, intercept } = ENTERIC_RUMINANT[animal_type];
+    const enteric_CH4 = ((slope * dmi + intercept) * 365 * head * GWP_CH4) / 1_000_000;
+    kgCO2e_enteric = enteric_CH4 * 1000; // tCO₂e → kgCO₂e
+  } else { // @ts-ignore
+      if (ENTERIC_NON_RUMINANT_EF[animal_type] !== undefined) {
+          // @ts-ignore
+        kgCO2e_enteric = (ENTERIC_NON_RUMINANT_EF[animal_type] * head * GWP_CH4) / 1000;
+        }
+    }
+
+  // ── AN3 · Manure management ────────────────────────────────────────────────
+
+  // @ts-ignore
+    const vs_rate     = VS_RATE[animal_type]      ?? 0;
+  // @ts-ignore
+    const n_rate      = N_RATE[animal_type]       ?? 0;
+  // @ts-ignore
+    const mcf         = MCF_VALS[manure_system]   ?? 0;
+  // @ts-ignore
+    const ef_n2o      = EF_N2O_SYSTEM[manure_system] ?? 0;
+  // @ts-ignore
+    const frac_vol    = FRAC_VOL[manure_system]   ?? 0;
+  // @ts-ignore
+    const frac_leach  = FRAC_LEACH[manure_system] ?? 0;
+  // @ts-ignore
+    const bo          = Bo_VALS[animal_type]      ?? 0;
+
+  const kgManure   = liveweight * vs_rate * 365 * head;
+  const kgManure_N = liveweight * n_rate  * 365 * head;
+
+  // AN3b · CH₄ from manure
+  let kgCO2e_manure_CH4 = 0;
+  if (bo > 0) {
+    // Tier 2
+    kgCO2e_manure_CH4 = (kgManure * (bo * 0.67) * (mcf / 100) * GWP_CH4) / 1000;
+  } else { // @ts-ignore
+    if (ENTERIC_NON_RUMINANT_EF[animal_type] !== undefined) {
+        // Tier 1 — reuse enteric EF as manure EF proxy where Bo not defined
+        // @ts-ignore
+      kgCO2e_manure_CH4 = (ENTERIC_NON_RUMINANT_EF[animal_type] * head * GWP_CH4) / 1000;
+      }
   }
 
-  if (flags.includeOtherMaterials) {
-    pushDetailPerField(
-      lines,
-      METH_CAT.research,
-      "Research · Other resources",
-      `${P.otherResourcesKgPerAnsweredField} kg CO₂e per field (illustrative)`,
-      teamB.otherResources,
-      P.otherResourcesKgPerAnsweredField
-    );
+  // AN3c · Direct N₂O from manure
+  const kgCO2e_manure_N2O_direct =
+    (kgManure_N * (ef_n2o / 100) * N2O_CONV * GWP_N2O) / 1000;
+
+  // AN3d · Indirect N₂O (volatilisation + leaching)
+  const kgCO2e_N2O_vol =
+    (kgManure_N * frac_vol * EF_VOL * N2O_CONV * GWP_N2O) / 1000;
+  const remaining_N = kgManure_N * (1 - frac_vol);
+  const kgCO2e_N2O_leach =
+    (remaining_N * frac_leach * EF_LEACH * N2O_CONV * GWP_N2O) / 1000;
+  const kgCO2e_manure_N2O_indirect = kgCO2e_N2O_vol + kgCO2e_N2O_leach;
+
+  const kgCO2e_manure =
+    kgCO2e_manure_CH4 + kgCO2e_manure_N2O_direct + kgCO2e_manure_N2O_indirect;
+
+  // ── AN4 · Feed purchase ────────────────────────────────────────────────────
+
+  let kgCO2e_feed = 0;
+  if (an?.an_feed === "Yes") {
+    const feed_type = an?.an_feed_type || "";
+    const feed_kg   = Number(an?.an_feed_kg) || 0;
+    // @ts-ignore
+    const ef_feed   = FEED_EF[feed_type] ?? 0;
+    kgCO2e_feed = feed_kg * ef_feed; // already kgCO₂e (EF in kgCO₂e/kg)
   }
+
+  // ── AN5 · Fertiliser / seeds ───────────────────────────────────────────────
+
+  let kgCO2e_fertiliser = 0;
+  if (an?.an_fert === "Yes") {
+    const fert_type = an?.an_fert_type || "";
+    const fert_kg   = Number(an?.an_fert_kg) || 0;
+    // @ts-ignore
+    const ef_fert   = FERT_EF[fert_type] ?? 0;
+    kgCO2e_fertiliser = fert_kg * ef_fert;
+  }
+
+  // ── AN6 · Scale & total ────────────────────────────────────────────────────
+
+  const kgCO2e_Animal =
+    (kgCO2e_enteric + kgCO2e_manure + kgCO2e_feed + kgCO2e_fertiliser)
+    * scale_factor;
+
+  // ── Push to lines ──────────────────────────────────────────────────────────
+
+  pushDetailPerField(
+    lines,
+    METH_CAT.research,
+    "Research · Animal studies",
+    `${kgCO2e_Animal.toFixed(4)} kg CO₂e (enteric + manure + feed + fertiliser × ${reporting_weeks}/52 wks)`,
+    teamB.animal,
+    kgCO2e_Animal
+  );
+}
+
+  // if (flags.includeOtherMaterials) {
+  //   pushDetailPerField(
+  //     lines,
+  //     METH_CAT.research,
+  //     "Research · Other resources",
+  //     `${P.otherResourcesKgPerAnsweredField} kg CO₂e per field (illustrative)`,
+  //     teamB.otherResources,
+  //     P.otherResourcesKgPerAnsweredField
+  //   );
+  // }
+
+  if (flags.includeOtherMaterials) {
+  const or = teamB.otherResources;
+
+  // ── Lookup tables ──────────────────────────────────────────────────────────
+
+  const PAPER_EF = {
+    "Printing A4":        0.006725,
+    "Printing A3":        0.013451,
+    "Printing A2":        0.026902,
+    "Printing A1":        0.053803,
+    "Printing A0":        0.107606,
+    "Printing Other":     0.006725, // fallback to A4
+    "Notebook A4":        1.345078,
+    "Notebook A5":        1.345078,
+    "Notebook Other":     1.345078,
+    "Textbook":           1.345078 + 1.199725, // pages + cover board
+    "Book (Literature)":  1.345078,
+    "Journal":            1.345078,
+    "Plain Paper A5":     0.003363, // half A4
+    "Plain Paper A4":     0.006725,
+    "Plain Paper A3":     0.013451,
+    "Plain Paper A2":     0.026902,
+    "Plain Paper A1":     0.053803,
+    "Plain Paper A0":     0.107606,
+    "Plain Paper Other":  0.006725,
+    "Notecards":          0.006725,
+    "Post-it Notes":      0.006725,
+    "Flip-Chart":         2.690,
+  };
+
+  const METAL_EF = {
+    "Steel (UK market mix)": 1.64,
+    "Aluminium (EU mix)":    10.1,
+    "Copper":                 4.6,
+    // fallback for unspecified type
+    "General / unknown":      1.64,
+  };
+
+  const WOOD_EF = {
+    "Sawn softwood":  0.2695,
+    "MDF / chipboard": 1.1997,
+    "Plywood":        0.2695,
+    "General / unknown": 0.2695,
+  };
+
+  const PLASTIC_EF = {
+    "HDPE":              3.095,
+    "PET":               3.864,
+    "PVC":               2.945,
+    "General / unknown": 3.172,
+  };
+
+  const EF_GLASS = 1.402767; // same for all glass types
+  const EF_OTHER = 1.64;     // closest material fallback (steel-equivalent)
+
+  // ── R1 · Paper ─────────────────────────────────────────────────────────────
+
+  let kgCO2e_paper = 0;
+  if (or?.or_paper === "Yes") {
+    const paper_type = or?.or_paper_types || "";
+    const quantity   = Number(or?.or_paper_amt) || 0;
+    // @ts-ignore
+    const ef         = PAPER_EF[paper_type] ?? PAPER_EF["Plain Paper A4"];
+    kgCO2e_paper     = quantity * ef;
+  }
+
+  // ── R2 · Metal ─────────────────────────────────────────────────────────────
+
+  let kgCO2e_metal_net = 0;
+  if (or?.or_metal === "Yes") {
+    const qty_kg      = Number(or?.or_metal_kg)  || 0;
+    const recycled_kg = Number(or?.or_metal_rec) || 0;
+    const ef          = METAL_EF["General / unknown"]; // no type selector in form; extend if added
+    kgCO2e_metal_net  = (qty_kg - recycled_kg) * ef;
+  }
+
+  // ── R3 · Wood ──────────────────────────────────────────────────────────────
+
+  let kgCO2e_wood_net = 0;
+  if (or?.or_wood === "Yes") {
+    const qty_kg      = Number(or?.or_wood_kg)  || 0;
+    const recycled_kg = Number(or?.or_wood_rec) || 0;
+    const ef          = WOOD_EF["General / unknown"];
+    kgCO2e_wood_net   = (qty_kg - recycled_kg) * ef;
+  }
+
+  // ── R4 · Plastic ───────────────────────────────────────────────────────────
+
+  let kgCO2e_plastic_net = 0;
+  if (or?.or_plastic === "Yes") {
+    const qty_kg      = Number(or?.or_plastic_kg)  || 0;
+    const recycled_kg = Number(or?.or_plastic_rec) || 0;
+    const ef          = PLASTIC_EF["General / unknown"];
+    kgCO2e_plastic_net = (qty_kg - recycled_kg) * ef;
+  }
+
+  // ── R5 · Glass ─────────────────────────────────────────────────────────────
+
+  let kgCO2e_glass_net = 0;
+  if (or?.or_glass === "Yes") {
+    const qty_kg      = Number(or?.or_glass_kg)  || 0;
+    const recycled_kg = Number(or?.or_glass_rec) || 0;
+    kgCO2e_glass_net  = (qty_kg - recycled_kg) * EF_GLASS;
+  }
+
+  // ── R6 · Other resources ───────────────────────────────────────────────────
+
+  let kgCO2e_other_net = 0;
+  if (or?.or_other === "Yes") {
+    const qty_kg      = Number(or?.or_other_kg)  || 0;
+    const recycled_kg = Number(or?.or_other_rec) || 0;
+    kgCO2e_other_net  = (qty_kg - recycled_kg) * EF_OTHER;
+  }
+
+  // ── Section total ──────────────────────────────────────────────────────────
+
+  const kgCO2e_Resources =
+    kgCO2e_paper        +
+    kgCO2e_metal_net    +
+    kgCO2e_wood_net     +
+    kgCO2e_plastic_net  +
+    kgCO2e_glass_net    +
+    kgCO2e_other_net;
+
+  // ── Push to lines ──────────────────────────────────────────────────────────
+
+  pushDetailPerField(
+    lines,
+    METH_CAT.research,
+    "Research · Other resources",
+    `${kgCO2e_Resources.toFixed(4)} kg CO₂e (paper + metal + wood + plastic + glass + other, net of recycling)`,
+    teamB.otherResources,
+    kgCO2e_Resources
+  );
+}
 
   pushDetailPerField(
     lines,
